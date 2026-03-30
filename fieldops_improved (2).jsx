@@ -177,9 +177,9 @@ const MOCK_PROJECTS = [
       [{ plot: 301, trt: 2 }, { plot: 302, trt: 3 }, { plot: 303, trt: 1 }],
     ],
     inventory: [
-      { product: "Flexion", formConc: "4 LBA/GAL", formType: "L", totalRequired: "41.667 mL" },
-      { product: "NIS", formConc: "100%", formType: "SL", totalRequired: "12.499 mL" },
-      { product: "Diflexx", formConc: "4 LBAE/GAL", formType: "SC", totalRequired: "41.667 mL" },
+      { product: "Flexion", formConc: "4 LBA/GAL", formType: "L", totalRequired: 41.667 },
+      { product: "NIS", formConc: "100%", formType: "SL", totalRequired: 12.499 },
+      { product: "Diflexx", formConc: "4 LBAE/GAL", formType: "SC", totalRequired: 41.667 },
     ],
     appAmount: "15 GAL/AC",
     mixSize: "2 L",
@@ -251,17 +251,17 @@ const MOCK_PROJECTS = [
       [{ plot:301,trt:1 },{ plot:302,trt:2 },{ plot:303,trt:8 },{ plot:304,trt:10 },{ plot:305,trt:12 },{ plot:306,trt:9 },{ plot:307,trt:14 },{ plot:308,trt:3 },{ plot:309,trt:13 },{ plot:310,trt:16 },{ plot:311,trt:11 },{ plot:312,trt:17 },{ plot:313,trt:6 },{ plot:314,trt:4 },{ plot:315,trt:5 },{ plot:316,trt:7 },{ plot:317,trt:15 }],
     ],
     inventory: [
-      { product: "Resicore", formConc: "3.29 LB/GAL", formType: "EC", totalRequired: "104.166 mL" },
-      { product: "Roundup PowerMAX 3", formConc: "575 gAE/L", formType: "SL", totalRequired: "41.667 mL" },
-      { product: "Diflexx", formConc: "4 LBAE/GAL", formType: "SC", totalRequired: "13.021 mL" },
-      { product: "AMS", formConc: "3.4 LB/GAL", formType: "SL", totalRequired: "1,012.390 mL" },
-      { product: "COC", formConc: "100%", formType: "SL", totalRequired: "74.992 mL" },
-      { product: "LK-22372 EC (II)", formConc: "0.351 LBA/GAL", formType: "EC", totalRequired: "121.796 mL" },
-      { product: "MSO", formConc: "100%", formType: "L", totalRequired: "324.965 mL" },
-      { product: "Armezon", formConc: "2.8 LBA/GAL", formType: "SC", totalRequired: "2.278 mL" },
-      { product: "Laudis", formConc: "3.5 lb/gal", formType: "SC", totalRequired: "3.913 mL" },
-      { product: "Shieldex", formConc: "3.33 LB/GAL", formType: "SC", totalRequired: "1.304 mL" },
-      { product: "Atrazine", formConc: "4 LBA/GAL", formType: "F", totalRequired: "124.905 mL" },
+      { product: "Resicore", formConc: "3.29 LB/GAL", formType: "EC", totalRequired: 104.166 },
+      { product: "Roundup PowerMAX 3", formConc: "575 gAE/L", formType: "SL", totalRequired: 41.667 },
+      { product: "Diflexx", formConc: "4 LBAE/GAL", formType: "SC", totalRequired: 13.021 },
+      { product: "AMS", formConc: "3.4 LB/GAL", formType: "SL", totalRequired: 1012.390 },
+      { product: "COC", formConc: "100%", formType: "SL", totalRequired: 74.992 },
+      { product: "LK-22372 EC (II)", formConc: "0.351 LBA/GAL", formType: "EC", totalRequired: 121.796 },
+      { product: "MSO", formConc: "100%", formType: "L", totalRequired: 324.965 },
+      { product: "Armezon", formConc: "2.8 LBA/GAL", formType: "SC", totalRequired: 2.278 },
+      { product: "Laudis", formConc: "3.5 lb/gal", formType: "SC", totalRequired: 3.913 },
+      { product: "Shieldex", formConc: "3.33 LB/GAL", formType: "SC", totalRequired: 1.304 },
+      { product: "Atrazine", formConc: "4 LBA/GAL", formType: "F", totalRequired: 124.905 },
     ],
     appAmount: "15 GAL/AC",
     mixSize: "2 L",
@@ -335,6 +335,8 @@ function appReducer(state, action) {
       const audit = withAudit(state, "Site Created", action.payload.name);
       return { ...state, sites: [...state.sites, action.payload], ...audit };
     }
+    case "SET_USER":
+      return { ...state, currentUser: action.payload };
     case "ADD_FIELD": {
       const audit = withAudit(state, "Field Created", action.payload.name);
       return { ...state, fields: [...state.fields, action.payload], ...audit };
@@ -569,9 +571,20 @@ function Toast({ message, type = "success", onDismiss }) {
 // ============================================================
 // HEADER
 // ============================================================
+const KNOWN_USERS = ["Dr. Amit Jhala", "Jansen McDaniel", "Dr. Sarah Thompson", "Marcus Reyes"];
+
 function Header({ weather }) {
-  const { state } = useContext(AppContext);
+  const { state, dispatch } = useContext(AppContext);
   const condition = useMemo(() => getSprayCondition(weather), [weather]);
+  const [editingUser, setEditingUser] = useState(false);
+  const [userInput, setUserInput] = useState(state.currentUser);
+
+  const commitUser = () => {
+    const name = userInput.trim();
+    if (name && name !== state.currentUser) dispatch({ type: "SET_USER", payload: name });
+    setEditingUser(false);
+  };
+
   return (
     <header style={{ background: `linear-gradient(135deg, ${COLORS.headerDark}, ${COLORS.headerMid})`, padding: "0 20px", height: 52, display: "flex", alignItems: "center", gap: 16, borderBottom: `3px solid ${COLORS.accent}`, flexShrink: 0 }} role="banner">
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -588,9 +601,22 @@ function Header({ weather }) {
         <span><SunIcon size={13} /> {weather.temp}°F</span>
         <span>{weather.humidity}% RH</span>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", background: "rgba(255,255,255,0.12)", borderRadius: 3 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", background: "rgba(255,255,255,0.12)", borderRadius: 3, cursor: "pointer" }} onClick={() => { setUserInput(state.currentUser); setEditingUser(true); }} title="Click to change user">
         <UserIcon size={14} color="#c8d6cc" />
-        <span style={{ fontSize: 11, color: "#c8d6cc" }}>{state.currentUser}</span>
+        {editingUser ? (
+          <input
+            autoFocus
+            value={userInput}
+            list="known-users"
+            onChange={e => setUserInput(e.target.value)}
+            onBlur={commitUser}
+            onKeyDown={e => { if (e.key === "Enter") commitUser(); if (e.key === "Escape") setEditingUser(false); }}
+            style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 3, color: "#fff", fontSize: 11, padding: "2px 6px", width: 160, fontFamily: "'Fira Code', monospace", outline: "none" }}
+          />
+        ) : (
+          <span style={{ fontSize: 11, color: "#c8d6cc" }}>{state.currentUser}</span>
+        )}
+        <datalist id="known-users">{KNOWN_USERS.map(u => <option key={u} value={u} />)}</datalist>
       </div>
     </header>
   );
@@ -964,7 +990,16 @@ function HomeDashboard({ onNavigate, onOpenProject }) {
 function ProjectDetails({ project, onBack }) {
   const { state } = useContext(AppContext);
   const [tab, setTab] = useState("overview");
-  const proj = state.projects.find(p => p.id === project.id) || project;
+  const proj = state.projects.find(p => p.id === project.id);
+
+  if (!proj) {
+    return (
+      <div style={{ padding: 40, textAlign: "center" }}>
+        <p style={{ color: COLORS.textDim, fontSize: 14, marginBottom: 16 }}>This project no longer exists.</p>
+        <Btn onClick={onBack}>← Back to Dashboard</Btn>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: 20 }}>
@@ -1067,15 +1102,65 @@ function ProjectOverview({ proj }) {
 }
 
 function TreatmentTable({ proj }) {
+  const { dispatch } = useContext(AppContext);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  const startEdit = (trt) => {
+    setEditingId(trt.trtNo);
+    setEditForm({ code: trt.code, description: trt.description });
+  };
+
+  const saveEdit = (trt) => {
+    const updated = { ...proj, treatments: proj.treatments.map(t => t.trtNo === trt.trtNo ? { ...t, ...editForm } : t) };
+    dispatch({ type: "UPDATE_PROJECT", payload: updated });
+    setEditingId(null);
+  };
+
   return (
     <Card>
       <div style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary, marginBottom: 12 }}>Treatment List — {proj.treatmentCount} treatments × {proj.reps} reps</div>
-      <Table columns={[
-        { key: "trtNo", label: "Trt #", mono: true },
-        { key: "code", label: "Code" },
-        { key: "description", label: "Description" },
-        { key: "color", label: "", render: (row) => <div style={{ width: 16, height: 16, borderRadius: 2, background: TRT_COLORS[(row.trtNo - 1) % TRT_COLORS.length] }} /> },
-      ]} data={proj.treatments} />
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          <thead>
+            <tr>
+              {["Trt #", "Code", "Description", "", ""].map((h, i) => (
+                <th key={i} style={{ textAlign: "left", padding: "8px 10px", borderBottom: `2px solid ${COLORS.border}`, color: COLORS.textSecondary, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: "uppercase", fontFamily: "'Fira Code', monospace", whiteSpace: "nowrap" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {proj.treatments.map(t => (
+              <tr key={t.trtNo} style={{ borderBottom: `1px solid ${COLORS.border}22` }}>
+                <td style={{ padding: "8px 10px", fontFamily: "'Fira Code', monospace", color: COLORS.textPrimary }}>{t.trtNo}</td>
+                <td style={{ padding: "8px 10px" }}>
+                  {editingId === t.trtNo
+                    ? <input value={editForm.code} onChange={e => setEditForm(f => ({ ...f, code: e.target.value }))} style={{ width: 60, padding: "3px 6px", background: COLORS.bgInput, border: `1px solid ${COLORS.border}`, borderRadius: 2, color: COLORS.textPrimary, fontSize: 12, fontFamily: "'Fira Code', monospace" }} />
+                    : <span style={{ color: COLORS.textPrimary }}>{t.code}</span>}
+                </td>
+                <td style={{ padding: "8px 10px", width: "100%" }}>
+                  {editingId === t.trtNo
+                    ? <input value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} style={{ width: "100%", padding: "3px 6px", background: COLORS.bgInput, border: `1px solid ${COLORS.border}`, borderRadius: 2, color: COLORS.textPrimary, fontSize: 12, fontFamily: "'Fira Code', monospace" }} />
+                    : <span style={{ color: COLORS.textPrimary }}>{t.description}</span>}
+                </td>
+                <td style={{ padding: "8px 10px" }}>
+                  <div style={{ width: 16, height: 16, borderRadius: 2, background: TRT_COLORS[(t.trtNo - 1) % TRT_COLORS.length] }} />
+                </td>
+                <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
+                  {editingId === t.trtNo ? (
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <Btn size="sm" variant="success" onClick={() => saveEdit(t)}>Save</Btn>
+                      <Btn size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Btn>
+                    </div>
+                  ) : (
+                    <Btn size="sm" variant="ghost" onClick={() => startEdit(t)}>Edit</Btn>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </Card>
   );
 }
@@ -1539,6 +1624,10 @@ function InteractiveMap({ onOpenProject }) {
     const field = state.fields.find(f => f.id === fieldId);
     if (!field || !field.bounds) return;
 
+    if (file.size > 2 * 1024 * 1024) {
+      setToast(`Warning: large image (${(file.size / (1024 * 1024)).toFixed(1)} MB) — will not persist after page refresh`);
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const lats = field.bounds.map(b => b[0]);
@@ -1553,7 +1642,7 @@ function InteractiveMap({ onOpenProject }) {
           fieldId, imageOverlay: { dataUrl: e.target.result, bounds: imgBounds, opacity: 0.7, visible: true }
         }
       });
-      setToast(`Image layer added to ${field.name}`);
+      setToast(`Image layer added to ${field.name} (re-upload required after refresh)`);
     };
     reader.readAsDataURL(file);
   };
@@ -1900,10 +1989,16 @@ function CalendarModule() {
     return d;
   }, [firstDay, daysInMonth]);
 
+  const eventsByDate = useMemo(() => {
+    const map = {};
+    events.forEach(e => { (map[e.date] = map[e.date] || []).push(e); });
+    return map;
+  }, [events]);
+
   const getEventsForDay = (day) => {
     if (!day) return [];
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return events.filter(e => e.date === dateStr);
+    return eventsByDate[dateStr] || [];
   };
 
   return (
@@ -2008,7 +2103,7 @@ function HerbicideInventory() {
         if (!map[key]) {
           map[key] = { ...item, totalMl: 0, projects: [] };
         }
-        const ml = parseFloat(item.totalRequired?.replace(/[^0-9.]/g, "") || 0);
+        const ml = typeof item.totalRequired === "number" ? item.totalRequired : parseFloat(item.totalRequired) || 0;
         map[key].totalMl += ml;
         map[key].projects.push(proj.title);
       });
@@ -2068,7 +2163,7 @@ function HerbicideInventory() {
               {proj.inventory?.map((item, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderBottom: `1px solid ${COLORS.border}11` }}>
                   <span style={{ color: COLORS.textSecondary }}>{item.product}</span>
-                  <span style={{ fontFamily: "'Fira Code', monospace", color: COLORS.textPrimary }}>{item.totalRequired}</span>
+                  <span style={{ fontFamily: "'Fira Code', monospace", color: COLORS.textPrimary }}>{typeof item.totalRequired === "number" ? `${item.totalRequired.toFixed(3)} mL` : item.totalRequired}</span>
                 </div>
               ))}
             </Card>
@@ -2220,7 +2315,14 @@ export default function App() {
   // Persist state on every change (after hydration)
   useEffect(() => {
     if (hydrated) {
-      persistState({ projects: state.projects, fields: state.fields, sites: state.sites, auditLog: state.auditLog });
+      // Strip dataUrl from imageOverlays before persisting — base64 images can exceed
+      // localStorage's 5 MB limit and silently corrupt the entire saved state.
+      // Users will need to re-upload field images after a page refresh.
+      const fieldsForStorage = state.fields.map(f => ({
+        ...f,
+        imageOverlay: f.imageOverlay ? { bounds: f.imageOverlay.bounds, opacity: f.imageOverlay.opacity, visible: f.imageOverlay.visible } : null,
+      }));
+      persistState({ projects: state.projects, fields: fieldsForStorage, sites: state.sites, auditLog: state.auditLog });
     }
   }, [state, hydrated]);
 
