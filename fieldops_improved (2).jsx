@@ -248,7 +248,7 @@ const MOCK_PROJECTS = [
     plotMap: [
       [{ plot:101,trt:1 },{ plot:102,trt:2 },{ plot:103,trt:3 },{ plot:104,trt:4 },{ plot:105,trt:5 },{ plot:106,trt:6 },{ plot:107,trt:7 },{ plot:108,trt:8 },{ plot:109,trt:9 },{ plot:110,trt:10 },{ plot:111,trt:11 },{ plot:112,trt:12 },{ plot:113,trt:13 },{ plot:114,trt:14 },{ plot:115,trt:15 },{ plot:116,trt:16 },{ plot:117,trt:17 }],
       [{ plot:201,trt:10 },{ plot:202,trt:15 },{ plot:203,trt:9 },{ plot:204,trt:13 },{ plot:205,trt:8 },{ plot:206,trt:1 },{ plot:207,trt:3 },{ plot:208,trt:12 },{ plot:209,trt:11 },{ plot:210,trt:7 },{ plot:211,trt:4 },{ plot:212,trt:14 },{ plot:213,trt:5 },{ plot:214,trt:6 },{ plot:215,trt:17 },{ plot:216,trt:2 },{ plot:217,trt:16 }],
-      [{ plot:301,trt:1 },{ plot:302,trt:2 },{ plot:303,trt:8 },{ plot:304,trt:10 },{ plot:305,trt:12 },{ plot:306,trt:9 },{ plot:307,trt:14 },{ plot:308,trt:3 },{ plot:309,trt:13 },{ plot:310,trt:16 },{ plot:311,trt:11 },{ plot:312,trt:17 },{ plot:313,trt:6 },{ plot:314,trt:5 },{ plot:315,trt:5 },{ plot:316,trt:7 },{ plot:317,trt:15 }],
+      [{ plot:301,trt:1 },{ plot:302,trt:2 },{ plot:303,trt:8 },{ plot:304,trt:10 },{ plot:305,trt:12 },{ plot:306,trt:9 },{ plot:307,trt:14 },{ plot:308,trt:3 },{ plot:309,trt:13 },{ plot:310,trt:16 },{ plot:311,trt:11 },{ plot:312,trt:17 },{ plot:313,trt:6 },{ plot:314,trt:4 },{ plot:315,trt:5 },{ plot:316,trt:7 },{ plot:317,trt:15 }],
     ],
     inventory: [
       { product: "Resicore", formConc: "3.29 LB/GAL", formType: "EC", totalRequired: "104.166 mL" },
@@ -331,9 +331,9 @@ function appReducer(state, action) {
     case "ADD_AUDIT": {
       return { ...state, auditLog: [...state.auditLog, { id: generateId(), ...action.payload, user: state.currentUser, timestamp: new Date().toISOString() }] };
     }
-    case "ADD_MAP_POLYGON": {
-      const audit = withAudit(state, "Map Edit", `Created polygon: ${action.payload.label}`);
-      return { ...state, mapPolygons: [...state.mapPolygons, action.payload], ...audit };
+    case "ADD_SITE": {
+      const audit = withAudit(state, "Site Created", action.payload.name);
+      return { ...state, sites: [...state.sites, action.payload], ...audit };
     }
     case "ADD_FIELD": {
       const audit = withAudit(state, "Field Created", action.payload.name);
@@ -835,7 +835,7 @@ function NewProjectModal({ open, onClose }) {
             <Input label="Variety" value={form.variety} onChange={e => set("variety", e.target.value)} placeholder="e.g. GT Field Corn" />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Select label="Research Site" options={INITIAL_SITES.map(s => ({ value: s.id, label: s.name }))} value={form.siteId} onChange={e => set("siteId", e.target.value)} />
+            <Select label="Research Site" options={state.sites.map(s => ({ value: s.id, label: s.name }))} value={form.siteId} onChange={e => set("siteId", e.target.value)} />
             <Select label="Field" options={state.fields.filter(f => f.siteId === form.siteId).map(f => ({ value: f.id, label: f.name }))} value={form.fieldId} onChange={e => set("fieldId", e.target.value)} />
           </div>
           <TextArea label="Objective" value={form.objective} onChange={e => set("objective", e.target.value)} />
@@ -995,7 +995,7 @@ function ProjectDetails({ project, onBack }) {
 
 function ProjectOverview({ proj }) {
   const { state } = useContext(AppContext);
-  const site = INITIAL_SITES.find(s => s.id === proj.siteId);
+  const site = state.sites.find(s => s.id === proj.siteId);
   const field = state.fields.find(f => f.id === proj.fieldId);
   const metaRows = [
     ["Trial ID", proj.trialId],
@@ -1211,10 +1211,15 @@ function RatingsPanel({ proj }) {
 function ProjectFiles({ proj }) {
   const { dispatch } = useContext(AppContext);
   const categories = ["protocols", "spray_sheets", "data_sheets", "photos", "maps"];
+  const fileInputRefs = useRef({});
 
-  const handleUpload = (cat) => {
-    const file = { id: generateId(), name: `uploaded_file_${Date.now()}.pdf`, category: cat, size: "— KB", uploadDate: new Date().toISOString().split("T")[0] };
-    dispatch({ type: "ADD_FILE", payload: { projectId: proj.id, file } });
+  const handleFileSelect = (cat, file) => {
+    if (!file) return;
+    const sizeStr = file.size >= 1024 * 1024
+      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+      : `${Math.round(file.size / 1024)} KB`;
+    const fileRecord = { id: generateId(), name: file.name, category: cat, size: sizeStr, uploadDate: new Date().toISOString().split("T")[0] };
+    dispatch({ type: "ADD_FILE", payload: { projectId: proj.id, file: fileRecord } });
   };
 
   return (
@@ -1225,7 +1230,10 @@ function ProjectFiles({ proj }) {
           <Card key={cat} style={{ marginBottom: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <span style={{ fontWeight: 700, fontSize: 12, color: COLORS.textPrimary, textTransform: "uppercase", fontFamily: "'Fira Code', monospace", letterSpacing: 1 }}>/{cat}</span>
-              <Btn size="sm" variant="secondary" onClick={() => handleUpload(cat)}><UploadIcon size={12} /> Upload</Btn>
+              <span>
+                <input ref={el => fileInputRefs.current[cat] = el} type="file" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(cat, f); e.target.value = ""; }} />
+                <Btn size="sm" variant="secondary" onClick={() => fileInputRefs.current[cat]?.click()}><UploadIcon size={12} /> Upload</Btn>
+              </span>
             </div>
             {files.length > 0 ? (
               <Table columns={[
@@ -1375,7 +1383,7 @@ function InteractiveMap({ onOpenProject }) {
   const [showNewField, setShowNewField] = useState(false);
   const [newFieldName, setNewFieldName] = useState("");
   const [newFieldAcres, setNewFieldAcres] = useState("");
-  const [newFieldSite, setNewFieldSite] = useState(INITIAL_SITES[0].id);
+  const [newFieldSite, setNewFieldSite] = useState(() => state.sites[0]?.id || "");
 
   const FIELD_COLORS = ["#22c55e", "#0ea5e9", "#f97316", "#a855f7", "#ef4444", "#eab308", "#ec4899", "#14b8a6"];
 
@@ -1385,7 +1393,7 @@ function InteractiveMap({ onOpenProject }) {
     const L = window.L;
     if (!L) return;
 
-    const site = INITIAL_SITES[0];
+    const site = state.sites[0];
     const map = L.map(mapRef.current, { zoomControl: true, preferCanvas: true }).setView([site.lat, site.lng], 16);
 
     // Satellite base layer
@@ -1456,9 +1464,13 @@ function InteractiveMap({ onOpenProject }) {
               <div style="font-weight:700;font-size:13px;margin-bottom:4px;color:#1b4332">${poly.label}</div>
               <div style="color:#555;margin-bottom:2px">${proj.crop} · ${proj.treatmentCount} TRT × ${proj.reps} REP</div>
               <div style="color:#555;margin-bottom:6px">Field: ${field.name}</div>
-              <button onclick="window.__fieldops_openProject && window.__fieldops_openProject('${proj.id}')" style="background:#d97706;border:none;padding:5px 12px;border-radius:4px;font-weight:700;font-size:11px;cursor:pointer;font-family:inherit;color:#fff;width:100%">Open Project →</button>
+              <button class="fieldops-open-btn" style="background:#d97706;border:none;padding:5px 12px;border-radius:4px;font-weight:700;font-size:11px;cursor:pointer;font-family:inherit;color:#fff;width:100%">Open Project →</button>
             </div>
           `, { maxWidth: 250, className: "project-popup" });
+          polyLayer.on("popupopen", () => {
+            const btn = polyLayer.getPopup()?.getElement()?.querySelector(".fieldops-open-btn");
+            if (btn) btn.addEventListener("click", () => onOpenProject(proj), { once: true });
+          });
         }
 
         leafletLayers.current.polys[poly.id] = polyLayer;
@@ -1466,14 +1478,6 @@ function InteractiveMap({ onOpenProject }) {
     });
   }, [state.fields, state.projects]);
 
-  // ---- GLOBAL CALLBACK FOR POPUP "Open Project" BUTTON ----
-  useEffect(() => {
-    window.__fieldops_openProject = (projId) => {
-      const proj = state.projects.find(p => p.id === projId);
-      if (proj && onOpenProject) onOpenProject(proj);
-    };
-    return () => { delete window.__fieldops_openProject; };
-  }, [state.projects, onOpenProject]);
 
   // ---- IMAGE OVERLAYS ----
   useEffect(() => {
@@ -1698,7 +1702,7 @@ function InteractiveMap({ onOpenProject }) {
 
   const handleAddField = () => {
     if (!newFieldName.trim()) return;
-    const site = INITIAL_SITES.find(s => s.id === newFieldSite) || INITIAL_SITES[0];
+    const site = state.sites.find(s => s.id === newFieldSite) || state.sites[0];
     // Generate a default rectangular bounds near the site center
     const offset = state.fields.length * 0.003;
     const newField = {
@@ -1730,13 +1734,13 @@ function InteractiveMap({ onOpenProject }) {
   // Group fields by site
   const fieldsBySite = useMemo(() => {
     const grouped = {};
-    INITIAL_SITES.forEach(s => { grouped[s.id] = { site: s, fields: [] }; });
+    state.sites.forEach(s => { grouped[s.id] = { site: s, fields: [] }; });
     state.fields.forEach(f => {
       if (grouped[f.siteId]) grouped[f.siteId].fields.push(f);
       else if (Object.keys(grouped).length) grouped[Object.keys(grouped)[0]].fields.push(f);
     });
     return grouped;
-  }, [state.fields]);
+  }, [state.fields, state.sites]);
 
   return (
     <div style={{ display: "flex", height: "calc(100vh - 52px)" }}>
@@ -1817,7 +1821,7 @@ function InteractiveMap({ onOpenProject }) {
           <Input label="Field Name *" value={newFieldName} onChange={e => setNewFieldName(e.target.value)} placeholder="e.g. South Pivot" />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Input label="Acres" type="number" value={newFieldAcres} onChange={e => setNewFieldAcres(e.target.value)} placeholder="0" />
-            <Select label="Research Site" options={INITIAL_SITES.map(s => ({ value: s.id, label: s.name }))} value={newFieldSite} onChange={e => setNewFieldSite(e.target.value)} />
+            <Select label="Research Site" options={state.sites.map(s => ({ value: s.id, label: s.name }))} value={newFieldSite} onChange={e => setNewFieldSite(e.target.value)} />
           </div>
           <p style={{ margin: 0, fontSize: 10, color: COLORS.textDim, lineHeight: 1.5 }}>
             A default boundary will be created near the site center. You can adjust the bounds after creation by drawing the actual boundary on the map.
@@ -2198,9 +2202,9 @@ export default function App() {
   const [state, dispatch] = useReducer(appReducer, {
     projects: MOCK_PROJECTS,
     fields: INITIAL_FIELDS,
+    sites: INITIAL_SITES,
     auditLog: INITIAL_AUDIT,
     currentUser: "Dr. Amit Jhala",
-    mapPolygons: [],
   });
 
   // Hydrate from persistent storage on mount
@@ -2216,7 +2220,7 @@ export default function App() {
   // Persist state on every change (after hydration)
   useEffect(() => {
     if (hydrated) {
-      persistState({ projects: state.projects, fields: state.fields, auditLog: state.auditLog, mapPolygons: state.mapPolygons });
+      persistState({ projects: state.projects, fields: state.fields, sites: state.sites, auditLog: state.auditLog });
     }
   }, [state, hydrated]);
 
