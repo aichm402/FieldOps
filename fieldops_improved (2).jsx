@@ -74,8 +74,12 @@ const STORAGE_KEY = "fieldops-state";
 
 async function loadPersistedState() {
   try {
-    const result = await window.storage.get(STORAGE_KEY);
-    return result ? JSON.parse(result.value) : null;
+    if (window.storage) {
+      const result = await window.storage.get(STORAGE_KEY);
+      return result ? JSON.parse(result.value) : null;
+    }
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
@@ -83,7 +87,11 @@ async function loadPersistedState() {
 
 async function persistState(state) {
   try {
-    await window.storage.set(STORAGE_KEY, JSON.stringify(state));
+    if (window.storage) {
+      await window.storage.set(STORAGE_KEY, JSON.stringify(state));
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
   } catch (e) {
     console.error("Storage save failed:", e);
   }
