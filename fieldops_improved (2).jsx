@@ -439,78 +439,68 @@ function getSprayCondition(weather) {
 // COMMON UI COMPONENTS
 // ============================================================
 const Badge = memo(({ children, color = COLORS.accent, bg }) => (
-  <span style={{ background: bg || color + "22", color, padding: "2px 8px", borderRadius: 3, fontSize: 11, fontWeight: 600, fontFamily: "monospace", letterSpacing: 0.5, whiteSpace: "nowrap" }}>{children}</span>
+  <span className="fo-badge" style={{ background: bg || color + "22", color }}>{children}</span>
 ));
 
-const Btn = memo(({ children, variant = "primary", size = "md", onClick, disabled, style, ...props }) => {
-  const base = { border: "1px solid transparent", cursor: disabled ? "default" : "pointer", fontWeight: 600, fontFamily: "'Fira Code', monospace", transition: "all 0.15s", display: "inline-flex", alignItems: "center", gap: 6, opacity: disabled ? 0.5 : 1, borderRadius: 3 };
-  const sizes = { sm: { padding: "4px 10px", fontSize: 11 }, md: { padding: "7px 16px", fontSize: 12 }, lg: { padding: "10px 22px", fontSize: 13 } };
-  const variants = {
-    primary: { background: COLORS.accent, color: "#fff", borderColor: COLORS.accent },
-    secondary: { background: "transparent", color: COLORS.textSecondary, borderColor: COLORS.border },
-    danger: { background: COLORS.danger + "22", color: COLORS.danger, borderColor: COLORS.danger + "44" },
-    success: { background: COLORS.success + "22", color: COLORS.success, borderColor: COLORS.success + "44" },
-    ghost: { background: "transparent", color: COLORS.textSecondary, borderColor: "transparent" },
-  };
-  return (
-    <button
-      onClick={disabled ? undefined : onClick}
-      disabled={disabled}
-      aria-disabled={disabled}
-      style={{ ...base, ...sizes[size], ...variants[variant], ...style }}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-});
+const Btn = memo(({ children, variant = "primary", size = "md", onClick, disabled, style, className, ...props }) => (
+  <button
+    onClick={disabled ? undefined : onClick}
+    disabled={disabled}
+    aria-disabled={disabled}
+    className={`fo-btn fo-btn--${size} fo-btn--${variant}${className ? " " + className : ""}`}
+    style={style}
+    {...props}
+  >
+    {children}
+  </button>
+));
 
-const Input = ({ label, id, ...props }) => {
+const Input = ({ label, id, style, className, ...props }) => {
   const inputId = id || `input-${label?.replace(/\s+/g, "-").toLowerCase()}`;
   return (
-    <label htmlFor={inputId} style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: COLORS.textSecondary, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>
+    <label htmlFor={inputId} className="fo-field">
       {label}
-      <input id={inputId} {...props} style={{ background: COLORS.bgInput, border: `1px solid ${COLORS.border}`, borderRadius: 3, padding: "7px 10px", color: COLORS.textPrimary, fontSize: 13, fontFamily: "'Fira Code', monospace", outline: "none", ...props.style }} />
+      <input id={inputId} className={`fo-input${className ? " " + className : ""}`} style={style} {...props} />
     </label>
   );
 };
 
-const Select = ({ label, options, id, ...props }) => {
+const Select = ({ label, options, id, style, ...props }) => {
   const selectId = id || `select-${label?.replace(/\s+/g, "-").toLowerCase()}`;
   return (
-    <label htmlFor={selectId} style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: COLORS.textSecondary, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>
+    <label htmlFor={selectId} className="fo-field">
       {label}
-      <select id={selectId} {...props} style={{ background: COLORS.bgInput, border: `1px solid ${COLORS.border}`, borderRadius: 3, padding: "7px 10px", color: COLORS.textPrimary, fontSize: 13, fontFamily: "'Fira Code', monospace", outline: "none", ...props.style }}>
+      <select id={selectId} className="fo-select" style={style} {...props}>
         {options.map(o => <option key={typeof o === 'string' ? o : o.value} value={typeof o === 'string' ? o : o.value}>{typeof o === 'string' ? o : o.label}</option>)}
       </select>
     </label>
   );
 };
 
-const TextArea = ({ label, id, ...props }) => {
+const TextArea = ({ label, id, style, ...props }) => {
   const taId = id || `ta-${label?.replace(/\s+/g, "-").toLowerCase()}`;
   return (
-    <label htmlFor={taId} style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: COLORS.textSecondary, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>
+    <label htmlFor={taId} className="fo-field">
       {label}
-      <textarea id={taId} {...props} style={{ background: COLORS.bgInput, border: `1px solid ${COLORS.border}`, borderRadius: 3, padding: "7px 10px", color: COLORS.textPrimary, fontSize: 13, fontFamily: "'Fira Code', monospace", outline: "none", resize: "vertical", minHeight: 60, ...props.style }} />
+      <textarea id={taId} className="fo-textarea" style={style} {...props} />
     </label>
   );
 };
 
-const Card = memo(({ children, style, onClick }) => (
-  <div onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(e); } } : undefined} style={{ background: COLORS.bgCard, border: `1px solid ${COLORS.border}`, borderRadius: 6, padding: 16, cursor: onClick ? "pointer" : "default", transition: "border-color 0.15s, box-shadow 0.15s", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", ...style }}>{children}</div>
+const Card = memo(({ children, style, onClick, className }) => (
+  <div onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(e); } } : undefined} className={`fo-card${onClick ? " fo-card--clickable" : ""}${className ? " " + className : ""}`} style={style}>{children}</div>
 ));
 
 const Table = memo(({ columns, data, onRowClick }) => (
-  <div style={{ overflowX: "auto" }} role="table" aria-label="Data table">
-    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+  <div className="fo-table-scroll" role="table" aria-label="Data table">
+    <table className="fo-table">
       <thead>
-        <tr>{columns.map(c => <th key={c.key} style={{ textAlign: "left", padding: "8px 10px", borderBottom: `2px solid ${COLORS.border}`, color: COLORS.textSecondary, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: "uppercase", fontFamily: "'Fira Code', monospace", whiteSpace: "nowrap" }}>{c.label}</th>)}</tr>
+        <tr>{columns.map(c => <th key={c.key} className="fo-th">{c.label}</th>)}</tr>
       </thead>
       <tbody>
         {data.map((row, i) => (
-          <tr key={row.id || i} onClick={() => onRowClick?.(row)} onKeyDown={onRowClick ? (e) => { if (e.key === "Enter") onRowClick(row); } : undefined} tabIndex={onRowClick ? 0 : undefined} role={onRowClick ? "button" : undefined} style={{ cursor: onRowClick ? "pointer" : "default", borderBottom: `1px solid ${COLORS.border}22` }}>
-            {columns.map(c => <td key={c.key} style={{ padding: "8px 10px", color: COLORS.textPrimary, fontFamily: c.mono ? "'Fira Code', monospace" : "inherit", fontSize: 12, whiteSpace: "nowrap" }}>{c.render ? c.render(row) : row[c.key]}</td>)}
+          <tr key={row.id || i} onClick={() => onRowClick?.(row)} onKeyDown={onRowClick ? (e) => { if (e.key === "Enter") onRowClick(row); } : undefined} tabIndex={onRowClick ? 0 : undefined} role={onRowClick ? "button" : undefined} className={onRowClick ? "fo-tr--clickable" : ""}>
+            {columns.map(c => <td key={c.key} className={`fo-td${c.mono ? " fo-td--mono" : ""}`}>{c.render ? c.render(row) : row[c.key]}</td>)}
           </tr>
         ))}
       </tbody>
@@ -532,22 +522,22 @@ const Modal = ({ open, onClose, title, children, width = 600 }) => {
 
   if (!open) return null;
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.3)" }} onClick={onClose} role="dialog" aria-modal="true" aria-label={title}>
-      <div ref={modalRef} tabIndex={-1} onClick={e => e.stopPropagation()} style={{ background: COLORS.bgCard, border: `1px solid ${COLORS.border}`, borderRadius: 8, width, maxWidth: "95vw", maxHeight: "90vh", overflow: "auto", outline: "none", boxShadow: "0 20px 60px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderBottom: `1px solid ${COLORS.border}` }}>
-          <span style={{ fontWeight: 700, color: COLORS.textPrimary, fontSize: 15 }}>{title}</span>
-          <button onClick={onClose} aria-label="Close modal" style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.textSecondary, padding: 4 }}><XIcon size={18} /></button>
+    <div className="fo-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label={title}>
+      <div ref={modalRef} tabIndex={-1} onClick={e => e.stopPropagation()} className="fo-modal" style={{ width }}>
+        <div className="fo-modal__header">
+          <span className="fo-modal__title">{title}</span>
+          <button onClick={onClose} aria-label="Close modal" className="fo-modal__close"><XIcon size={18} /></button>
         </div>
-        <div style={{ padding: 20 }}>{children}</div>
+        <div className="fo-modal__body">{children}</div>
       </div>
     </div>
   );
 };
 
 const TabBar = ({ tabs, active, onChange }) => (
-  <div style={{ display: "flex", gap: 0, borderBottom: `2px solid ${COLORS.border}`, marginBottom: 16 }} role="tablist">
+  <div className="fo-tabbar" role="tablist">
     {tabs.map(t => (
-      <button key={t.id} onClick={() => onChange(t.id)} role="tab" aria-selected={active === t.id} aria-controls={`panel-${t.id}`} style={{ padding: "8px 18px", background: "none", border: "none", borderBottom: active === t.id ? `2px solid ${COLORS.accent}` : "2px solid transparent", color: active === t.id ? COLORS.accent : COLORS.textSecondary, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "'Fira Code', monospace", marginBottom: -2, transition: "all 0.15s" }}>{t.label}</button>
+      <button key={t.id} onClick={() => onChange(t.id)} role="tab" aria-selected={active === t.id} aria-controls={`panel-${t.id}`} className={`fo-tab${active === t.id ? " fo-tab--active" : ""}`}>{t.label}</button>
     ))}
   </div>
 );
@@ -561,9 +551,9 @@ function Toast({ message, type = "success", onDismiss }) {
 
   const color = type === "success" ? COLORS.success : type === "error" ? COLORS.danger : COLORS.info;
   return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 2000, background: COLORS.bgCard, border: `1px solid ${color}44`, borderLeft: `4px solid ${color}`, borderRadius: 6, padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 8px 32px rgba(0,0,0,0.1)", animation: "slideIn 0.25s ease-out" }}>
+    <div className={`fo-toast fo-toast--${type === "error" ? "error" : type === "success" ? "success" : "info"}`}>
       {type === "success" ? <CheckCircle size={16} color={color} /> : <AlertTriangle size={16} color={color} />}
-      <span style={{ fontSize: 12, color: COLORS.textPrimary, fontWeight: 500 }}>{message}</span>
+      <span className="fo-toast__msg">{message}</span>
     </div>
   );
 }
@@ -586,22 +576,22 @@ function Header({ weather }) {
   };
 
   return (
-    <header style={{ background: `linear-gradient(135deg, ${COLORS.headerDark}, ${COLORS.headerMid})`, padding: "0 20px", height: 52, display: "flex", alignItems: "center", gap: 16, borderBottom: `3px solid ${COLORS.accent}`, flexShrink: 0 }} role="banner">
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    <header className="fo-header" role="banner">
+      <div className="fo-header__brand">
         <LayersIcon size={22} color={COLORS.accent} />
-        <span style={{ fontFamily: "'Fira Code', monospace", fontWeight: 800, fontSize: 18, color: "#fff", letterSpacing: 1.5 }}>FieldOps</span>
+        <span className="fo-header__brand-name">FieldOps</span>
       </div>
-      <div style={{ flex: 1 }} />
-      <div aria-label={`Spray conditions: ${condition.safe ? "Go" : "No-Go"}`} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 3, background: condition.safe ? "#22c55e22" : "#ef444422", border: `1px solid ${condition.safe ? "#22c55e" : "#ef4444"}55` }}>
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: condition.safe ? "#4ade80" : "#f87171", animation: condition.safe ? "none" : "pulse 1.5s infinite" }} />
-        <span style={{ fontSize: 10, fontWeight: 600, color: condition.safe ? "#4ade80" : "#f87171", fontFamily: "'Fira Code', monospace" }}>SPRAY {condition.safe ? "GO" : "NO-GO"}</span>
+      <div className="fo-header__spacer" />
+      <div aria-label={`Spray conditions: ${condition.safe ? "Go" : "No-Go"}`} className={`fo-spray-pill fo-spray-pill--${condition.safe ? "go" : "nogo"}`}>
+        <div className={`fo-spray-dot fo-spray-dot--${condition.safe ? "go" : "nogo"}`} />
+        <span>SPRAY {condition.safe ? "GO" : "NO-GO"}</span>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 11, color: "#c8d6cc", fontFamily: "'Fira Code', monospace" }}>
+      <div className="fo-header__weather">
         <span><WindIcon size={13} /> {weather.wind}mph</span>
         <span><SunIcon size={13} /> {weather.temp}°F</span>
         <span>{weather.humidity}% RH</span>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", background: "rgba(255,255,255,0.12)", borderRadius: 3, cursor: "pointer" }} onClick={() => { setUserInput(state.currentUser); setEditingUser(true); }} title="Click to change user">
+      <div className="fo-header__user" onClick={() => { setUserInput(state.currentUser); setEditingUser(true); }} title="Click to change user">
         <UserIcon size={14} color="#c8d6cc" />
         {editingUser ? (
           <input
@@ -611,10 +601,10 @@ function Header({ weather }) {
             onChange={e => setUserInput(e.target.value)}
             onBlur={commitUser}
             onKeyDown={e => { if (e.key === "Enter") commitUser(); if (e.key === "Escape") setEditingUser(false); }}
-            style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 3, color: "#fff", fontSize: 11, padding: "2px 6px", width: 160, fontFamily: "'Fira Code', monospace", outline: "none" }}
+            className="fo-user-input"
           />
         ) : (
-          <span style={{ fontSize: 11, color: "#c8d6cc" }}>{state.currentUser}</span>
+          <span className="fo-header__username">{state.currentUser}</span>
         )}
         <datalist id="known-users">{KNOWN_USERS.map(u => <option key={u} value={u} />)}</datalist>
       </div>
@@ -636,18 +626,18 @@ function Sidebar({ active, onNavigate }) {
     { id: "audit", label: "Audit Log", icon: ClockIcon },
   ];
   return (
-    <nav style={{ width: 200, background: COLORS.bgMid, borderRight: `1px solid ${COLORS.border}`, padding: "12px 0", flexShrink: 0, display: "flex", flexDirection: "column", gap: 2 }} role="navigation" aria-label="Main navigation">
+    <nav className="fo-sidebar" role="navigation" aria-label="Main navigation">
       {items.map(item => {
         const isActive = active === item.id;
         return (
-          <button key={item.id} onClick={() => onNavigate(item.id)} aria-current={isActive ? "page" : undefined} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 16px", background: isActive ? COLORS.accent + "18" : "transparent", border: "none", borderLeft: isActive ? `3px solid ${COLORS.accent}` : "3px solid transparent", color: isActive ? COLORS.accent : COLORS.textSecondary, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "'Fira Code', monospace", textAlign: "left", transition: "all 0.15s" }}>
+          <button key={item.id} onClick={() => onNavigate(item.id)} aria-current={isActive ? "page" : undefined} className={`fo-sidebar__item${isActive ? " fo-sidebar__item--active" : ""}`}>
             <item.icon size={16} color={isActive ? COLORS.accent : COLORS.textDim} />
             {item.label}
           </button>
         );
       })}
-      <div style={{ flex: 1 }} />
-      <div style={{ padding: "12px 16px", borderTop: `1px solid ${COLORS.border}`, fontSize: 9, color: COLORS.textDim, fontFamily: "'Fira Code', monospace" }}>
+      <div className="fo-sidebar__spacer" />
+      <div className="fo-sidebar__footer">
         FieldOps v0.2.0<br />UNL Weed Science
       </div>
     </nav>
@@ -698,38 +688,38 @@ const SeasonOverview = memo(function SeasonOverview() {
 
   return (
     <Card style={{ marginBottom: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <span style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary }}>Season Overview</span>
+      <div className="fo-gantt__header">
+        <span className="fo-section-title">Season Overview</span>
         <Badge>{projects.length} Active Trials</Badge>
       </div>
-      <div style={{ position: "relative", paddingTop: 20 }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", height: 18 }}>
+      <div className="fo-gantt">
+        <div className="fo-gantt__months">
           {months.map((m, i) => (
-            <span key={i} style={{ position: "absolute", left: `${Math.max(0, Math.min(95, m.pos))}%`, fontSize: 9, color: COLORS.textDim, fontFamily: "'Fira Code', monospace", whiteSpace: "nowrap" }}>{m.label}</span>
+            <span key={i} className="fo-gantt__month-label" style={{ left: `${Math.max(0, Math.min(95, m.pos))}%` }}>{m.label}</span>
           ))}
         </div>
         {projects.map((p) => {
           const plantPos = p.plantingDate ? toPercent(p.plantingDate) : 0;
           const harvestPos = p.harvestDate ? toPercent(p.harvestDate) : 100;
           return (
-            <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, height: 26 }}>
-              <span style={{ width: 140, fontSize: 10, color: COLORS.textSecondary, fontFamily: "'Fira Code', monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexShrink: 0 }}>{p.title}</span>
-              <div style={{ flex: 1, position: "relative", height: 18, background: COLORS.bgInput, borderRadius: 2 }}>
-                <div style={{ position: "absolute", left: `${plantPos}%`, width: `${harvestPos - plantPos}%`, height: "100%", background: COLORS.headerMid + "66", borderRadius: 2 }} />
+            <div key={p.id} className="fo-gantt__row">
+              <span className="fo-gantt__project-name">{p.title}</span>
+              <div className="fo-gantt__track">
+                <div className="fo-gantt__bar" style={{ left: `${plantPos}%`, width: `${harvestPos - plantPos}%` }} />
                 {p.applications?.map((a, ai) => a.date ? (
-                  <div key={ai} title={`App ${a.code} — ${a.timing} — ${a.date}`} style={{ position: "absolute", left: `${toPercent(a.date)}%`, top: 2, width: 14, height: 14, borderRadius: 2, background: a.timing?.includes("PRE") ? COLORS.info : COLORS.warning, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7, fontWeight: 800, color: "#fff" }}>{a.code}</div>
+                  <div key={ai} title={`App ${a.code} — ${a.timing} — ${a.date}`} className="fo-gantt__marker" style={{ left: `${toPercent(a.date)}%`, background: a.timing?.includes("PRE") ? COLORS.info : COLORS.warning }}>{a.code}</div>
                 ) : null)}
-                {p.plantingDate && <div title={`Planting: ${p.plantingDate}`} style={{ position: "absolute", left: `${plantPos}%`, top: 2, width: 14, height: 14, borderRadius: 2, background: COLORS.success, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 7, fontWeight: 800, color: "#fff" }}>P</span></div>}
-                {p.harvestDate && <div title={`Harvest: ${p.harvestDate}`} style={{ position: "absolute", left: `${Math.min(harvestPos, 98)}%`, top: 2, width: 14, height: 14, borderRadius: 2, background: COLORS.danger, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 7, fontWeight: 800, color: "#fff" }}>H</span></div>}
+                {p.plantingDate && <div title={`Planting: ${p.plantingDate}`} className="fo-gantt__marker" style={{ left: `${plantPos}%`, background: COLORS.success }}>P</div>}
+                {p.harvestDate && <div title={`Harvest: ${p.harvestDate}`} className="fo-gantt__marker" style={{ left: `${Math.min(harvestPos, 98)}%`, background: COLORS.danger }}>H</div>}
               </div>
             </div>
           );
         })}
-        <div style={{ display: "flex", gap: 12, marginTop: 8, fontSize: 9, color: COLORS.textDim }}>
-          <span><span style={{ display: "inline-block", width: 8, height: 8, background: COLORS.success, borderRadius: 2, marginRight: 3 }}/>Planting</span>
-          <span><span style={{ display: "inline-block", width: 8, height: 8, background: COLORS.info, borderRadius: 2, marginRight: 3 }}/>PRE App</span>
-          <span><span style={{ display: "inline-block", width: 8, height: 8, background: COLORS.warning, borderRadius: 2, marginRight: 3 }}/>POST App</span>
-          <span><span style={{ display: "inline-block", width: 8, height: 8, background: COLORS.danger, borderRadius: 2, marginRight: 3 }}/>Harvest</span>
+        <div className="fo-gantt__legend">
+          <span><span className="fo-gantt__legend-dot" style={{ background: COLORS.success }} />Planting</span>
+          <span><span className="fo-gantt__legend-dot" style={{ background: COLORS.info }} />PRE App</span>
+          <span><span className="fo-gantt__legend-dot" style={{ background: COLORS.warning }} />POST App</span>
+          <span><span className="fo-gantt__legend-dot" style={{ background: COLORS.danger }} />Harvest</span>
         </div>
       </div>
     </Card>
@@ -741,28 +731,28 @@ const SeasonOverview = memo(function SeasonOverview() {
 // ============================================================
 function ProjectCard({ project, onOpen, onNavigate }) {
   return (
-    <Card style={{ display: "flex", flexDirection: "column", gap: 10, border: `1px solid ${COLORS.border}`, position: "relative", overflow: "hidden" }} onClick={() => onOpen(project)}>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${COLORS.accent}, ${COLORS.headerMid})` }} />
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 4 }}>
-        <span style={{ fontWeight: 700, fontSize: 14, color: COLORS.textPrimary, lineHeight: 1.3 }}>{project.title}</span>
+    <Card className="fo-project-card" onClick={() => onOpen(project)}>
+      <div className="fo-project-card__accent" />
+      <div className="fo-project-card__header">
+        <span className="fo-project-card__title">{project.title}</span>
         <Badge color={project.status === "Active" ? COLORS.success : COLORS.textDim}>{project.status}</Badge>
       </div>
-      <div style={{ fontSize: 11, color: COLORS.textSecondary }}>{project.crop}{project.variety ? ` — ${project.variety}` : ""}</div>
-      <div style={{ fontSize: 11, color: COLORS.textDim, lineHeight: 1.4 }}>{project.notes?.substring(0, 80)}{project.notes?.length > 80 ? "..." : ""}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", fontSize: 10, fontFamily: "'Fira Code', monospace", color: COLORS.textSecondary, marginTop: 4, paddingTop: 8, borderTop: `1px solid ${COLORS.border}` }}>
+      <div className="fo-project-card__crop">{project.crop}{project.variety ? ` — ${project.variety}` : ""}</div>
+      <div className="fo-project-card__notes">{project.notes?.substring(0, 80)}{project.notes?.length > 80 ? "..." : ""}</div>
+      <div className="fo-project-card__dates">
         <span>PLANT <span style={{ color: COLORS.success }}>{project.plantingDate || "—"}</span></span>
         <span>HARVEST <span style={{ color: COLORS.danger }}>{project.harvestDate || "—"}</span></span>
         {project.applications?.map((a, i) => (
           <span key={a.id || i}>APP {a.code} <span style={{ color: COLORS.warning }}>{a.date || "—"}</span></span>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, fontSize: 10, fontFamily: "'Fira Code', monospace", color: COLORS.textDim }}>
+      <div className="fo-project-card__stats">
         <span>TRT: {project.treatmentCount} | REP: {project.reps}</span>
         <span>PLOTS: {project.treatmentCount * project.reps}</span>
         <span>PLOT: {project.plotWidth}×{project.plotLength} ft</span>
         <span>DESIGN: RCB</span>
       </div>
-      <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+      <div className="fo-project-card__actions">
         <Btn size="sm" onClick={(e) => { e.stopPropagation(); onOpen(project); }}>Open Project</Btn>
         <Btn size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); onNavigate("map"); }}>Map</Btn>
         <Btn size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); onNavigate("files"); }}>Files</Btn>
@@ -843,19 +833,19 @@ function NewProjectModal({ open, onClose }) {
 
   return (
     <Modal open={open} onClose={onClose} title="Create New Project" width={720}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+      <div className="fo-wizard-progress">
         {[1, 2, 3].map(s => (
-          <div key={s} onClick={() => s < step ? setStep(s) : null} style={{ flex: 1, height: 4, background: step >= s ? COLORS.accent : COLORS.border, borderRadius: 2, cursor: s < step ? "pointer" : "default", transition: "background 0.2s" }} role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={3} />
+          <div key={s} onClick={() => s < step ? setStep(s) : null} className={`fo-wizard-step${step >= s ? " fo-wizard-step--done" : ""}`} style={{ cursor: s < step ? "pointer" : "default" }} role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={3} />
         ))}
       </div>
-      <div style={{ fontSize: 10, color: COLORS.textDim, marginBottom: 12, fontFamily: "'Fira Code', monospace" }}>
+      <div className="fo-wizard-label">
         STEP {step} OF 3 — {step === 1 ? "TRIAL DETAILS" : step === 2 ? "APPLICATIONS & SCHEDULE" : "UPLOAD ARM PDF"}
       </div>
 
       {step === 1 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <Input label="Trial Title *" value={form.title} onChange={e => set("title", e.target.value)} placeholder="e.g. 25-NA-Flexion-Corn" />
-          {errors.title && <span style={{ color: COLORS.danger, fontSize: 11, marginTop: -8 }}>{errors.title}</span>}
+          {errors.title && <span className="fo-field-error">{errors.title}</span>}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Input label="Crop" value={form.crop} onChange={e => set("crop", e.target.value)} />
             <Input label="Variety" value={form.variety} onChange={e => set("variety", e.target.value)} placeholder="e.g. GT Field Corn" />
@@ -882,7 +872,7 @@ function NewProjectModal({ open, onClose }) {
             <Input label="Harvest Date" type="date" value={form.harvestDate} onChange={e => set("harvestDate", e.target.value)} />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-            <span style={{ fontWeight: 600, fontSize: 12, color: COLORS.textPrimary }}>Application Events</span>
+            <span className="fo-section-title">Application Events</span>
             <Btn size="sm" variant="secondary" onClick={addApp}><PlusIcon size={12} /> Add Application</Btn>
           </div>
           {apps.map((a, i) => (
@@ -891,7 +881,7 @@ function NewProjectModal({ open, onClose }) {
               <Select label="Timing" options={["PRE","PREMEA","EAPOWE","POST","LPOST"]} value={a.timing} onChange={e => updateApp(i, "timing", e.target.value)} />
               <Select label="Placement" options={["soil app","post","broadcast","banded"]} value={a.placement} onChange={e => updateApp(i, "placement", e.target.value)} />
               <Input label="Date" type="date" value={a.date} onChange={e => updateApp(i, "date", e.target.value)} />
-              {apps.length > 1 && <button onClick={() => removeApp(i)} aria-label={`Remove application ${a.code}`} style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.danger, padding: 4, marginBottom: 2 }}><TrashIcon size={14} /></button>}
+              {apps.length > 1 && <button onClick={() => removeApp(i)} aria-label={`Remove application ${a.code}`} className="fo-icon-btn fo-icon-btn--danger"><TrashIcon size={14} /></button>}
             </div>
           ))}
         </div>
@@ -899,27 +889,27 @@ function NewProjectModal({ open, onClose }) {
 
       {step === 3 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center", padding: 20 }}>
-          <div style={{ border: `2px dashed ${COLORS.border}`, borderRadius: 6, padding: 40, textAlign: "center", width: "100%", cursor: "pointer", position: "relative" }}>
+          <div className="fo-upload-zone">
             <input type="file" accept=".pdf,.prt0" onChange={e => setArmPdf(e.target.files?.[0] || null)} aria-label="Upload ARM protocol file" style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
             <UploadIcon size={32} color={COLORS.textDim} />
-            <div style={{ marginTop: 8, fontSize: 13, color: COLORS.textSecondary, fontWeight: 600 }}>
+            <div className="fo-upload-zone__hint">
               {armPdf ? armPdf.name : "Drop ARM Protocol PDF or .prt0 file here"}
             </div>
-            <div style={{ fontSize: 10, color: COLORS.textDim, marginTop: 4 }}>Supports .pdf and .prt0 files from ARM 2024</div>
+            <div className="fo-upload-zone__sub">Supports .pdf and .prt0 files from ARM 2024</div>
           </div>
           {armPdf && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", background: COLORS.success + "18", borderRadius: 4, border: `1px solid ${COLORS.success}44` }}>
+            <div className="fo-upload-ready">
               <FileIcon size={16} color={COLORS.success} />
-              <span style={{ fontSize: 12, color: COLORS.success, fontWeight: 600 }}>{armPdf.name} — Ready to upload</span>
+              <span className="fo-upload-ready__name">{armPdf.name} — Ready to upload</span>
             </div>
           )}
-          <div style={{ fontSize: 11, color: COLORS.textDim, textAlign: "center", lineHeight: 1.6 }}>
+          <div className="fo-upload-hint" style={{ textAlign: "center" }}>
             Upload your ARM spray sheet PDF to auto-associate treatment data, plot maps, and inventory calculations with this project.
           </div>
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20, paddingTop: 16, borderTop: `1px solid ${COLORS.border}` }}>
+      <div className="fo-modal__footer">
         <Btn variant="ghost" onClick={step > 1 ? () => setStep(s => s - 1) : onClose}>{step > 1 ? "Back" : "Cancel"}</Btn>
         <div style={{ display: "flex", gap: 8 }}>
           {step < 3 && <Btn onClick={() => { if (step === 1 && !validate()) return; setStep(s => s + 1); }} disabled={step === 1 && !form.title}>Next</Btn>}
@@ -949,33 +939,33 @@ function HomeDashboard({ onNavigate, onOpenProject }) {
   }, [state.projects, filter, search]);
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+    <div className="fo-page">
+      <div className="fo-page__header" style={{ marginBottom: 16 }}>
         <div>
-          <h2 style={{ margin: 0, color: COLORS.textPrimary, fontSize: 20, fontWeight: 700 }}>Research Dashboard</h2>
-          <p style={{ margin: "4px 0 0", color: COLORS.textDim, fontSize: 12 }}>Manage herbicide trial operations</p>
+          <h2 className="fo-page__title">Research Dashboard</h2>
+          <p className="fo-page__subtitle">Manage herbicide trial operations</p>
         </div>
         <Btn onClick={() => setShowNew(true)}><PlusIcon size={14} /> New Project</Btn>
       </div>
 
       <SeasonOverview />
 
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center" }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 320 }}>
-          <SearchIcon size={14} color={COLORS.textDim} style={{ position: "absolute", left: 10, top: 10 }} />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search projects..." aria-label="Search projects" style={{ width: "100%", padding: "8px 10px 8px 30px", background: COLORS.bgInput, border: `1px solid ${COLORS.border}`, borderRadius: 3, color: COLORS.textPrimary, fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+      <div className="fo-filter-row">
+        <div className="fo-search-wrap">
+          <SearchIcon size={14} color={COLORS.textDim} className="fo-search-icon" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search projects..." aria-label="Search projects" className="fo-search-input" />
         </div>
         {["all", "active", "completed"].map(f => (
           <Btn key={f} size="sm" variant={filter === f ? "primary" : "secondary"} onClick={() => setFilter(f)} aria-pressed={filter === f}>{f.charAt(0).toUpperCase() + f.slice(1)}</Btn>
         ))}
-        <span style={{ fontSize: 11, color: COLORS.textDim, fontFamily: "'Fira Code', monospace" }}>{filtered.length} projects</span>
+        <span className="fo-count-label">{filtered.length} projects</span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 14 }}>
+      <div className="fo-project-grid">
         {filtered.map(p => <ProjectCard key={p.id} project={p} onOpen={onOpenProject} onNavigate={onNavigate} />)}
-        <Card style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 200, border: `2px dashed ${COLORS.border}`, cursor: "pointer", gap: 8 }} onClick={() => setShowNew(true)}>
+        <Card className="fo-placeholder-card" onClick={() => setShowNew(true)}>
           <PlusIcon size={28} color={COLORS.textDim} />
-          <span style={{ fontSize: 13, color: COLORS.textDim, fontWeight: 600 }}>Create New Project</span>
+          <span className="fo-placeholder-card__label">Create New Project</span>
         </Card>
       </div>
 
@@ -994,18 +984,18 @@ function ProjectDetails({ project, onBack }) {
 
   if (!proj) {
     return (
-      <div style={{ padding: 40, textAlign: "center" }}>
-        <p style={{ color: COLORS.textDim, fontSize: 14, marginBottom: 16 }}>This project no longer exists.</p>
+      <div className="fo-not-found">
+        <p className="fo-not-found__msg">This project no longer exists.</p>
         <Btn onClick={onBack}>← Back to Dashboard</Btn>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+    <div className="fo-page">
+      <div className="fo-detail-header">
         <Btn variant="ghost" size="sm" onClick={onBack}>← Back</Btn>
-        <h2 style={{ margin: 0, color: COLORS.textPrimary, fontSize: 18, fontWeight: 700 }}>{proj.title}</h2>
+        <h2 className="fo-detail-title">{proj.title}</h2>
         <Badge color={proj.status === "Active" ? COLORS.success : COLORS.textDim}>{proj.status}</Badge>
       </div>
 
@@ -1050,51 +1040,51 @@ function ProjectOverview({ proj }) {
   ];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+    <div className="fo-two-col">
       <Card>
-        <div style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary, marginBottom: 12 }}>Trial Metadata</div>
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "6px 16px", fontSize: 12 }}>
+        <div className="fo-section-title" style={{ marginBottom: 12 }}>Trial Metadata</div>
+        <div className="fo-meta-grid">
           {metaRows.map(([k, v]) => (
             <div key={k} style={{ display: "contents" }}>
-              <span style={{ color: COLORS.textDim, fontFamily: "'Fira Code', monospace", fontSize: 10, fontWeight: 600, textTransform: "uppercase" }}>{k}</span>
-              <span style={{ color: COLORS.textPrimary }}>{v}</span>
+              <span className="fo-meta-key">{k}</span>
+              <span className="fo-meta-val">{v}</span>
             </div>
           ))}
         </div>
       </Card>
       <Card>
-        <div style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary, marginBottom: 12 }}>Schedule</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: COLORS.success }} />
-            <span style={{ fontSize: 12, color: COLORS.textSecondary, width: 80 }}>Planting</span>
-            <span style={{ fontSize: 12, fontFamily: "'Fira Code', monospace", color: COLORS.textPrimary }}>{proj.plantingDate || "Not set"}</span>
+        <div className="fo-section-title" style={{ marginBottom: 12 }}>Schedule</div>
+        <div className="fo-schedule-list">
+          <div className="fo-schedule-row">
+            <div className="fo-schedule-dot" style={{ background: COLORS.success }} />
+            <span className="fo-schedule-label">Planting</span>
+            <span className="fo-schedule-date">{proj.plantingDate || "Not set"}</span>
           </div>
           {proj.applications?.map((a) => (
-            <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: a.timing?.includes("PRE") ? COLORS.info : COLORS.warning }} />
-              <span style={{ fontSize: 12, color: COLORS.textSecondary, width: 80 }}>App {a.code} ({a.timing})</span>
-              <span style={{ fontSize: 12, fontFamily: "'Fira Code', monospace", color: COLORS.textPrimary }}>{a.date || "Not set"}</span>
+            <div key={a.id} className="fo-schedule-row">
+              <div className="fo-schedule-dot" style={{ background: a.timing?.includes("PRE") ? COLORS.info : COLORS.warning }} />
+              <span className="fo-schedule-label">App {a.code} ({a.timing})</span>
+              <span className="fo-schedule-date">{a.date || "Not set"}</span>
               {a.completed && <Badge color={COLORS.success}>Completed</Badge>}
             </div>
           ))}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: COLORS.danger }} />
-            <span style={{ fontSize: 12, color: COLORS.textSecondary, width: 80 }}>Harvest</span>
-            <span style={{ fontSize: 12, fontFamily: "'Fira Code', monospace", color: COLORS.textPrimary }}>{proj.harvestDate || "Not set"}</span>
+          <div className="fo-schedule-row">
+            <div className="fo-schedule-dot" style={{ background: COLORS.danger }} />
+            <span className="fo-schedule-label">Harvest</span>
+            <span className="fo-schedule-date">{proj.harvestDate || "Not set"}</span>
           </div>
         </div>
       </Card>
       {proj.objective && (
         <Card style={{ gridColumn: "1 / -1" }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary, marginBottom: 8 }}>Objective</div>
-          <p style={{ margin: 0, fontSize: 12, color: COLORS.textSecondary, lineHeight: 1.6 }}>{proj.objective}</p>
+          <div className="fo-section-title" style={{ marginBottom: 8 }}>Objective</div>
+          <p className="fo-body-text">{proj.objective}</p>
         </Card>
       )}
       {proj.notes && (
         <Card style={{ gridColumn: "1 / -1" }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary, marginBottom: 8 }}>Notes</div>
-          <p style={{ margin: 0, fontSize: 12, color: COLORS.textSecondary, lineHeight: 1.6 }}>{proj.notes}</p>
+          <div className="fo-section-title" style={{ marginBottom: 8 }}>Notes</div>
+          <p className="fo-body-text">{proj.notes}</p>
         </Card>
       )}
     </div>
@@ -1119,34 +1109,34 @@ function TreatmentTable({ proj }) {
 
   return (
     <Card>
-      <div style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary, marginBottom: 12 }}>Treatment List — {proj.treatmentCount} treatments × {proj.reps} reps</div>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+      <div className="fo-section-title" style={{ marginBottom: 12 }}>Treatment List — {proj.treatmentCount} treatments × {proj.reps} reps</div>
+      <div className="fo-table-scroll">
+        <table className="fo-table">
           <thead>
             <tr>
               {["Trt #", "Code", "Description", "", ""].map((h, i) => (
-                <th key={i} style={{ textAlign: "left", padding: "8px 10px", borderBottom: `2px solid ${COLORS.border}`, color: COLORS.textSecondary, fontWeight: 600, fontSize: 10, letterSpacing: 0.8, textTransform: "uppercase", fontFamily: "'Fira Code', monospace", whiteSpace: "nowrap" }}>{h}</th>
+                <th key={i} className="fo-th">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {proj.treatments.map(t => (
-              <tr key={t.trtNo} style={{ borderBottom: `1px solid ${COLORS.border}22` }}>
-                <td style={{ padding: "8px 10px", fontFamily: "'Fira Code', monospace", color: COLORS.textPrimary }}>{t.trtNo}</td>
-                <td style={{ padding: "8px 10px" }}>
+              <tr key={t.trtNo} className="fo-tr">
+                <td className="fo-td fo-td--mono">{t.trtNo}</td>
+                <td className="fo-td">
                   {editingId === t.trtNo
-                    ? <input value={editForm.code} onChange={e => setEditForm(f => ({ ...f, code: e.target.value }))} style={{ width: 60, padding: "3px 6px", background: COLORS.bgInput, border: `1px solid ${COLORS.border}`, borderRadius: 2, color: COLORS.textPrimary, fontSize: 12, fontFamily: "'Fira Code', monospace" }} />
-                    : <span style={{ color: COLORS.textPrimary }}>{t.code}</span>}
+                    ? <input value={editForm.code} onChange={e => setEditForm(f => ({ ...f, code: e.target.value }))} className="fo-inline-input" style={{ width: 60 }} />
+                    : <span>{t.code}</span>}
                 </td>
-                <td style={{ padding: "8px 10px", width: "100%" }}>
+                <td className="fo-td" style={{ width: "100%" }}>
                   {editingId === t.trtNo
-                    ? <input value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} style={{ width: "100%", padding: "3px 6px", background: COLORS.bgInput, border: `1px solid ${COLORS.border}`, borderRadius: 2, color: COLORS.textPrimary, fontSize: 12, fontFamily: "'Fira Code', monospace" }} />
-                    : <span style={{ color: COLORS.textPrimary }}>{t.description}</span>}
+                    ? <input value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} className="fo-inline-input" style={{ width: "100%" }} />
+                    : <span>{t.description}</span>}
                 </td>
-                <td style={{ padding: "8px 10px" }}>
-                  <div style={{ width: 16, height: 16, borderRadius: 2, background: TRT_COLORS[(t.trtNo - 1) % TRT_COLORS.length] }} />
+                <td className="fo-td">
+                  <div className="fo-trt-swatch" style={{ background: TRT_COLORS[(t.trtNo - 1) % TRT_COLORS.length] }} />
                 </td>
-                <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
+                <td className="fo-td" style={{ whiteSpace: "nowrap" }}>
                   {editingId === t.trtNo ? (
                     <div style={{ display: "flex", gap: 4 }}>
                       <Btn size="sm" variant="success" onClick={() => saveEdit(t)}>Save</Btn>
@@ -1166,33 +1156,30 @@ function TreatmentTable({ proj }) {
 }
 
 function PlotMapView({ proj }) {
-  if (!proj.plotMap?.length) return <Card><p style={{ color: COLORS.textDim, fontSize: 13 }}>No plot map available. Upload an ARM protocol PDF to generate.</p></Card>;
+  if (!proj.plotMap?.length) return <Card><p className="fo-empty-state">No plot map available. Upload an ARM protocol PDF to generate.</p></Card>;
   return (
     <Card>
-      <div style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary, marginBottom: 12 }}>
+      <div className="fo-section-title" style={{ marginBottom: 12 }}>
         Trial Map — {proj.reps} Reps × {proj.treatmentCount} Treatments
       </div>
-      <div style={{ overflowX: "auto", paddingBottom: 8 }}>
+      <div className="fo-plotmap">
         {[...proj.plotMap].reverse().map((row, ri) => (
-          <div key={ri} style={{ display: "flex", gap: 2, marginBottom: 2 }}>
-            <div style={{ width: 40, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: COLORS.textDim, fontFamily: "'Fira Code', monospace", flexShrink: 0 }}>Rep {proj.plotMap.length - ri}</div>
+          <div key={ri} className="fo-plotmap__row">
+            <div className="fo-plotmap__rep-label">Rep {proj.plotMap.length - ri}</div>
             {row.map((cell, ci) => (
-              <div key={ci} title={`Plot ${cell.plot} — Treatment ${cell.trt}`} style={{
-                minWidth: 44, height: 38, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                background: TRT_COLORS[(cell.trt - 1) % TRT_COLORS.length] + "cc", borderRadius: 2, border: cell.trt === 1 ? `2px solid ${COLORS.textDim}` : "1px solid rgba(0,0,0,0.2)", flexShrink: 0,
-              }}>
-                <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", fontFamily: "'Fira Code', monospace", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>{cell.plot}</span>
-                <span style={{ fontSize: 8, color: "rgba(255,255,255,0.8)", fontFamily: "'Fira Code', monospace" }}>{cell.trt}</span>
+              <div key={ci} title={`Plot ${cell.plot} — Treatment ${cell.trt}`} className={`fo-plotmap__cell${cell.trt === 1 ? " fo-plotmap__cell--check" : ""}`} style={{ background: TRT_COLORS[(cell.trt - 1) % TRT_COLORS.length] + "cc" }}>
+                <span className="fo-plotmap__plot">{cell.plot}</span>
+                <span className="fo-plotmap__trt">{cell.trt}</span>
               </div>
             ))}
           </div>
         ))}
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12, paddingTop: 8, borderTop: `1px solid ${COLORS.border}` }}>
+      <div className="fo-plotmap__legend">
         {proj.treatments.map(t => (
-          <div key={t.trtNo} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 9, color: COLORS.textSecondary }}>
-            <div style={{ width: 10, height: 10, borderRadius: 1, background: TRT_COLORS[(t.trtNo - 1) % TRT_COLORS.length] }} />
-            <span style={{ fontFamily: "'Fira Code', monospace" }}>{t.trtNo}: {t.description?.substring(0, 30)}</span>
+          <div key={t.trtNo} className="fo-plotmap__legend-item">
+            <div className="fo-plotmap__legend-dot" style={{ background: TRT_COLORS[(t.trtNo - 1) % TRT_COLORS.length] }} />
+            <span>{t.trtNo}: {t.description?.substring(0, 30)}</span>
           </div>
         ))}
       </div>
@@ -1233,43 +1220,43 @@ function RatingsPanel({ proj }) {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <span style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary }}>Visual Ratings</span>
+      <div className="fo-ratings__header">
+        <span className="fo-section-title">Visual Ratings</span>
         <Btn size="sm" onClick={startRating}><PlusIcon size={12} /> New Rating</Btn>
       </div>
 
       {showForm && (
         <Card style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "end" }}>
+          <div className="fo-ratings__form-header">
             <Select label="Application" options={proj.applications.map(a => ({ value: a.code, label: `App ${a.code} (${a.timing})` }))} value={selectedApp} onChange={e => setSelectedApp(e.target.value)} />
             <Select label="Rating Event" options={datEvents} value={selectedEvent} onChange={e => setSelectedEvent(e.target.value)} />
             <Btn variant="success" onClick={saveRating}>Save Rating</Btn>
             <Btn variant="ghost" onClick={() => setShowForm(false)}>Cancel</Btn>
           </div>
-          <div style={{ overflowX: "auto", maxHeight: 400, overflowY: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+          <div className="fo-ratings__scroll">
+            <table className="fo-table">
               <thead>
                 <tr>
                   {["PLOT","TRT","WEED CONTROL %","CROP PHYTOTOXICITY %"].map(h => (
-                    <th key={h} style={{ padding: "6px 8px", textAlign: "left", borderBottom: `2px solid ${COLORS.border}`, color: COLORS.textDim, fontSize: 9, fontFamily: "'Fira Code', monospace", position: "sticky", top: 0, background: COLORS.bgCard }}>{h}</th>
+                    <th key={h} className="fo-th fo-th--sticky">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {allPlots.map(p => (
-                  <tr key={p.plot}>
-                    <td style={{ padding: "4px 8px", fontFamily: "'Fira Code', monospace", color: COLORS.textPrimary, borderBottom: `1px solid ${COLORS.border}22` }}>{p.plot}</td>
-                    <td style={{ padding: "4px 8px", borderBottom: `1px solid ${COLORS.border}22` }}>
+                  <tr key={p.plot} className="fo-tr">
+                    <td className="fo-td fo-td--mono">{p.plot}</td>
+                    <td className="fo-td">
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: 1, background: TRT_COLORS[(p.trt - 1) % TRT_COLORS.length] }} />
-                        <span style={{ fontFamily: "'Fira Code', monospace", color: COLORS.textSecondary }}>{p.trt}</span>
+                        <div className="fo-trt-swatch fo-trt-swatch--xs" style={{ background: TRT_COLORS[(p.trt - 1) % TRT_COLORS.length] }} />
+                        <span className="fo-mono-text">{p.trt}</span>
                       </div>
                     </td>
-                    <td style={{ padding: "4px 8px", borderBottom: `1px solid ${COLORS.border}22` }}>
-                      <input type="number" min="0" max="100" aria-label={`Weed control for plot ${p.plot}`} value={entries[p.plot]?.weedControl || ""} onChange={e => setEntries(prev => ({ ...prev, [p.plot]: { ...prev[p.plot], weedControl: e.target.value } }))} style={{ width: 60, padding: "3px 6px", background: COLORS.bgInput, border: `1px solid ${COLORS.border}`, borderRadius: 2, color: COLORS.textPrimary, fontSize: 12, fontFamily: "'Fira Code', monospace", textAlign: "center" }} placeholder="0-100" />
+                    <td className="fo-td">
+                      <input type="number" min="0" max="100" aria-label={`Weed control for plot ${p.plot}`} value={entries[p.plot]?.weedControl || ""} onChange={e => setEntries(prev => ({ ...prev, [p.plot]: { ...prev[p.plot], weedControl: e.target.value } }))} className="fo-rating-input" placeholder="0-100" />
                     </td>
-                    <td style={{ padding: "4px 8px", borderBottom: `1px solid ${COLORS.border}22` }}>
-                      <input type="number" min="0" max="100" aria-label={`Phytotoxicity for plot ${p.plot}`} value={entries[p.plot]?.phytotoxicity || ""} onChange={e => setEntries(prev => ({ ...prev, [p.plot]: { ...prev[p.plot], phytotoxicity: e.target.value } }))} style={{ width: 60, padding: "3px 6px", background: COLORS.bgInput, border: `1px solid ${COLORS.border}`, borderRadius: 2, color: COLORS.textPrimary, fontSize: 12, fontFamily: "'Fira Code', monospace", textAlign: "center" }} placeholder="0-100" />
+                    <td className="fo-td">
+                      <input type="number" min="0" max="100" aria-label={`Phytotoxicity for plot ${p.plot}`} value={entries[p.plot]?.phytotoxicity || ""} onChange={e => setEntries(prev => ({ ...prev, [p.plot]: { ...prev[p.plot], phytotoxicity: e.target.value } }))} className="fo-rating-input" placeholder="0-100" />
                     </td>
                   </tr>
                 ))}
@@ -1287,7 +1274,7 @@ function RatingsPanel({ proj }) {
           { key: "plots", label: "Plots Rated", render: r => Object.keys(r.entries || {}).length },
         ]} data={proj.ratings} />
       ) : (
-        <Card><p style={{ color: COLORS.textDim, fontSize: 13, textAlign: "center", padding: 20 }}>No ratings recorded yet. Click "New Rating" to enter visual assessment data.</p></Card>
+        <Card><p className="fo-empty-state" style={{ textAlign: "center", padding: 20 }}>No ratings recorded yet. Click "New Rating" to enter visual assessment data.</p></Card>
       )}
     </div>
   );
@@ -1313,8 +1300,8 @@ function ProjectFiles({ proj }) {
         const files = proj.files?.filter(f => f.category === cat) || [];
         return (
           <Card key={cat} style={{ marginBottom: 12 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ fontWeight: 700, fontSize: 12, color: COLORS.textPrimary, textTransform: "uppercase", fontFamily: "'Fira Code', monospace", letterSpacing: 1 }}>/{cat}</span>
+            <div className="fo-files__cat-header">
+              <span className="fo-files__cat-name">/{cat}</span>
               <span>
                 <input ref={el => fileInputRefs.current[cat] = el} type="file" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(cat, f); e.target.value = ""; }} />
                 <Btn size="sm" variant="secondary" onClick={() => fileInputRefs.current[cat]?.click()}><UploadIcon size={12} /> Upload</Btn>
@@ -1327,7 +1314,7 @@ function ProjectFiles({ proj }) {
                 { key: "uploadDate", label: "Uploaded", mono: true },
               ]} data={files} />
             ) : (
-              <p style={{ color: COLORS.textDim, fontSize: 11, margin: "4px 0" }}>No files in this directory</p>
+              <p className="fo-empty-state" style={{ margin: "4px 0" }}>No files in this directory</p>
             )}
           </Card>
         );
@@ -1361,22 +1348,22 @@ function FieldLayerPanel({ field, isExpanded, onToggle, onSelect, isSelected, pr
   };
 
   return (
-    <div style={{ background: isSelected ? field.color + "12" : COLORS.bgCard, border: `1px solid ${isSelected ? field.color + "66" : COLORS.border}`, borderRadius: 4, overflow: "hidden", transition: "all 0.15s" }}>
+    <div className={`fo-field-panel${isSelected ? " fo-field-panel--selected" : ""}`} style={isSelected ? { background: field.color + "12", borderColor: field.color + "66" } : {}}>
       {/* Field header */}
-      <div onClick={onToggle} role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter") onToggle(); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer", borderBottom: isExpanded ? `1px solid ${COLORS.border}44` : "none" }}>
-        <div style={{ width: 10, height: 10, borderRadius: 2, background: field.color, flexShrink: 0, border: `1px solid ${field.color}88` }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 11, color: COLORS.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{field.name}</div>
-          <div style={{ fontSize: 9, color: COLORS.textDim, fontFamily: "'Fira Code', monospace" }}>{field.acres} ac · {field.polygons.length} area{field.polygons.length !== 1 ? "s" : ""}</div>
+      <div onClick={onToggle} role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter") onToggle(); }} className={`fo-field-panel__header${isExpanded ? " fo-field-panel__header--expanded" : ""}`}>
+        <div className="fo-field-panel__dot" style={{ background: field.color, borderColor: field.color + "88" }} />
+        <div className="fo-field-panel__info">
+          <div className="fo-field-panel__name">{field.name}</div>
+          <div className="fo-field-panel__meta">{field.acres} ac · {field.polygons.length} area{field.polygons.length !== 1 ? "s" : ""}</div>
         </div>
         {isExpanded ? <ChevronDown size={12} color={COLORS.textDim} /> : <ChevronRight size={12} color={COLORS.textDim} />}
       </div>
 
       {/* Expanded content */}
       {isExpanded && (
-        <div style={{ padding: "6px 10px 10px" }}>
+        <div className="fo-field-panel__body">
           {/* Image overlay controls */}
-          <div style={{ display: "flex", gap: 4, marginBottom: 8, flexWrap: "wrap" }}>
+          <div className="fo-field-panel__controls">
             <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/tiff,image/webp" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) onUploadImage(field.id, f); e.target.value = ""; }} />
             <Btn size="sm" variant="secondary" onClick={() => fileInputRef.current?.click()} style={{ flex: 1 }}>
               <ImageIcon size={10} /> {field.imageOverlay ? "Replace" : "Upload"} Layer
@@ -1390,10 +1377,10 @@ function FieldLayerPanel({ field, isExpanded, onToggle, onSelect, isSelected, pr
 
           {/* Opacity slider */}
           {field.imageOverlay && field.imageOverlay.visible !== false && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-              <span style={{ fontSize: 8, color: COLORS.textDim, fontFamily: "'Fira Code', monospace", flexShrink: 0 }}>OPACITY</span>
-              <input type="range" min="10" max="100" value={(field.imageOverlay.opacity || 0.7) * 100} onChange={e => onOpacityChange(field.id, parseInt(e.target.value) / 100)} style={{ flex: 1, height: 3, accentColor: field.color }} />
-              <span style={{ fontSize: 8, color: COLORS.textDim, fontFamily: "'Fira Code', monospace", width: 28, textAlign: "right" }}>{Math.round((field.imageOverlay.opacity || 0.7) * 100)}%</span>
+            <div className="fo-field-panel__opacity">
+              <span className="fo-field-panel__opacity-label">OPACITY</span>
+              <input type="range" min="10" max="100" value={(field.imageOverlay.opacity || 0.7) * 100} onChange={e => onOpacityChange(field.id, parseInt(e.target.value) / 100)} className="fo-field-panel__slider" style={{ accentColor: field.color }} />
+              <span className="fo-field-panel__opacity-val">{Math.round((field.imageOverlay.opacity || 0.7) * 100)}%</span>
             </div>
           )}
 
@@ -1402,28 +1389,25 @@ function FieldLayerPanel({ field, isExpanded, onToggle, onSelect, isSelected, pr
             const area = calcArea(poly.coords);
             const isPolySelected = selectedPolyId === poly.id;
             return (
-              <div key={poly.id} onClick={() => onHighlightPoly(field.id, poly)} style={{
-                padding: "6px 8px", marginBottom: 4, background: isPolySelected ? COLORS.accent + "18" : COLORS.bgInput,
-                border: `1px solid ${isPolySelected ? COLORS.accent + "66" : COLORS.border}44`, borderRadius: 3, cursor: "pointer", borderLeft: `3px solid ${COLORS.accent}`,
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontWeight: 600, fontSize: 10, color: COLORS.textPrimary }}>{poly.label}</span>
+              <div key={poly.id} onClick={() => onHighlightPoly(field.id, poly)} className={`fo-poly-item${isPolySelected ? " fo-poly-item--selected" : ""}`}>
+                <div className="fo-poly-item__header">
+                  <span className="fo-poly-item__name">{poly.label}</span>
                   <div style={{ display: "flex", gap: 2 }}>
                     {project && (
-                      <button onClick={(e) => { e.stopPropagation(); onOpenProject(project); }} title="Open project" style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: COLORS.info, display: "flex" }}>
+                      <button onClick={(e) => { e.stopPropagation(); onOpenProject(project); }} title="Open project" className="fo-icon-btn fo-icon-btn--info">
                         <ExternalLinkIcon size={11} />
                       </button>
                     )}
-                    <button onClick={(e) => { e.stopPropagation(); onDeletePoly(field.id, poly.id); }} title="Remove area" style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: COLORS.danger + "88", display: "flex" }}>
+                    <button onClick={(e) => { e.stopPropagation(); onDeletePoly(field.id, poly.id); }} title="Remove area" className="fo-icon-btn fo-icon-btn--danger">
                       <TrashIcon size={10} />
                     </button>
                   </div>
                 </div>
-                {project && <div style={{ fontSize: 9, color: COLORS.textSecondary, marginTop: 2 }}>{project.crop} · {project.treatmentCount} trt × {project.reps} rep</div>}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 3 }}>
-                  <span style={{ fontSize: 8, color: COLORS.textDim, fontFamily: "'Fira Code', monospace" }}>{area.sqft.toLocaleString()} ft² · {area.acres} ac</span>
+                {project && <div className="fo-poly-item__crop">{project.crop} · {project.treatmentCount} trt × {project.reps} rep</div>}
+                <div className="fo-poly-item__footer">
+                  <span className="fo-poly-item__area">{area.sqft.toLocaleString()} ft² · {area.acres} ac</span>
                   {project && (
-                    <button onClick={(e) => { e.stopPropagation(); onGenerateGrid(field.id, poly); }} style={{ background: COLORS.bgCard, border: `1px solid ${COLORS.border}`, borderRadius: 2, cursor: "pointer", padding: "2px 6px", fontSize: 8, fontFamily: "'Fira Code', monospace", color: COLORS.textSecondary, display: "flex", alignItems: "center", gap: 3 }}>
+                    <button onClick={(e) => { e.stopPropagation(); onGenerateGrid(field.id, poly); }} className="fo-poly-grid-btn">
                       <GridIcon size={8} /> Grid
                     </button>
                   )}
@@ -1433,7 +1417,7 @@ function FieldLayerPanel({ field, isExpanded, onToggle, onSelect, isSelected, pr
           })}
 
           {/* Draw new area button */}
-          <Btn size="sm" variant="ghost" onClick={() => onDrawInField(field.id)} style={{ width: "100%", marginTop: 4, borderStyle: "dashed", borderColor: COLORS.border }}>
+          <Btn size="sm" variant="ghost" onClick={() => onDrawInField(field.id)} className="fo-add-area-btn">
             <PlusIcon size={10} /> Add Project Area
           </Btn>
         </div>
@@ -1832,23 +1816,23 @@ function InteractiveMap({ onOpenProject }) {
   }, [state.fields, state.sites]);
 
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 52px)" }}>
+    <div className="fo-map-layout">
       {/* ---- SIDEBAR ---- */}
-      <div style={{ width: 290, background: COLORS.bgMid, borderRight: `1px solid ${COLORS.border}`, overflow: "auto", padding: 0, display: "flex", flexDirection: "column" }}>
+      <div className="fo-map-sidebar">
         {/* Header */}
-        <div style={{ padding: "10px 12px", borderBottom: `1px solid ${COLORS.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-          <span style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary }}>Field Layers</span>
+        <div className="fo-map-sidebar__header">
+          <span className="fo-section-title">Field Layers</span>
           <Btn size="sm" variant="secondary" onClick={() => setShowNewField(true)}><PlusIcon size={10} /> Add Field</Btn>
         </div>
 
         {/* Draw mode banner */}
         {drawMode && (
-          <div style={{ padding: 10, background: COLORS.warning + "18", borderBottom: `1px solid ${COLORS.warning}44` }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: COLORS.warning, animation: "pulse 1.2s infinite" }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.warning }}>Drawing Mode</span>
+          <div className="fo-draw-banner">
+            <div className="fo-draw-banner__title">
+              <div className="fo-spray-dot fo-spray-dot--pulse" style={{ background: COLORS.warning }} />
+              <span>Drawing Mode</span>
             </div>
-            <p style={{ margin: "0 0 6px", fontSize: 10, color: COLORS.textSecondary }}>Click map to place vertices. {drawPoints.length} point{drawPoints.length !== 1 ? "s" : ""} placed.</p>
+            <p className="fo-draw-banner__hint">Click map to place vertices. {drawPoints.length} point{drawPoints.length !== 1 ? "s" : ""} placed.</p>
             <Input label="Area Label" value={drawLabel} onChange={e => setDrawLabel(e.target.value)} style={{ marginBottom: 6 }} />
             <Select label="Link to Project" options={[{ value: "", label: "— None —" }, ...state.projects.map(p => ({ value: p.id, label: p.title }))]} value={drawProject} onChange={e => setDrawProject(e.target.value)} />
             <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
@@ -1859,14 +1843,14 @@ function InteractiveMap({ onOpenProject }) {
         )}
 
         {/* Field tree */}
-        <div style={{ flex: 1, overflow: "auto", padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
+        <div className="fo-map-sidebar__tree">
           {Object.entries(fieldsBySite).map(([siteId, { site, fields }]) => (
             <div key={siteId}>
               <div onClick={() => {
                 const L = window.L;
                 const map = mapInstanceRef.current;
                 if (L && map) map.setView([site.lat, site.lng], 16);
-              }} style={{ fontSize: 9, fontWeight: 700, color: COLORS.textDim, textTransform: "uppercase", letterSpacing: 1, fontFamily: "'Fira Code', monospace", padding: "6px 2px 4px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+              }} className="fo-map-site-label">
                 <MapIcon size={10} color={COLORS.textDim} />
                 {site.name}
               </div>
@@ -1896,13 +1880,13 @@ function InteractiveMap({ onOpenProject }) {
         </div>
 
         {/* Sidebar footer */}
-        <div style={{ padding: "8px 12px", borderTop: `1px solid ${COLORS.border}`, fontSize: 9, color: COLORS.textDim, fontFamily: "'Fira Code', monospace", flexShrink: 0 }}>
+        <div className="fo-map-sidebar__footer">
           {state.fields.length} fields · {state.fields.reduce((s, f) => s + f.polygons.length, 0)} project areas
         </div>
       </div>
 
       {/* ---- MAP ---- */}
-      <div ref={mapRef} style={{ flex: 1 }} />
+      <div ref={mapRef} className="fo-map-container" />
 
       {/* ---- NEW FIELD MODAL ---- */}
       <Modal open={showNewField} onClose={() => setShowNewField(false)} title="Add New Field" width={420}>
@@ -1912,7 +1896,7 @@ function InteractiveMap({ onOpenProject }) {
             <Input label="Acres" type="number" value={newFieldAcres} onChange={e => setNewFieldAcres(e.target.value)} placeholder="0" />
             <Select label="Research Site" options={state.sites.map(s => ({ value: s.id, label: s.name }))} value={newFieldSite} onChange={e => setNewFieldSite(e.target.value)} />
           </div>
-          <p style={{ margin: 0, fontSize: 10, color: COLORS.textDim, lineHeight: 1.5 }}>
+          <p className="fo-hint-text">
             A default boundary will be created near the site center. You can adjust the bounds after creation by drawing the actual boundary on the map.
           </p>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
@@ -1921,18 +1905,6 @@ function InteractiveMap({ onOpenProject }) {
           </div>
         </div>
       </Modal>
-
-      {/* ---- STYLES ---- */}
-      <style>{`
-        .poly-label { background: rgba(0,0,0,0.75) !important; color: #d97706 !important; border: 1px solid #d97706 !important; font-family: 'Fira Code', monospace !important; font-size: 10px !important; font-weight: 700 !important; padding: 2px 6px !important; border-radius: 2px !important; }
-        .field-label { background: rgba(0,0,0,0.6) !important; color: #e8eaed !important; border: 1px solid rgba(255,255,255,0.3) !important; font-family: 'Fira Code', monospace !important; font-size: 9px !important; font-weight: 600 !important; padding: 2px 6px !important; border-radius: 2px !important; letter-spacing: 0.5px !important; }
-        .leaflet-container { background: #f5f3ef; }
-        .leaflet-popup-content-wrapper { background: #fff; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
-        .leaflet-popup-content { margin: 10px 12px; }
-        .leaflet-popup-tip { background: #fff; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-      `}</style>
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
@@ -2002,16 +1974,16 @@ function CalendarModule() {
   };
 
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 52px)" }}>
-      <div style={{ width: 220, background: COLORS.bgMid, borderRight: `1px solid ${COLORS.border}`, padding: 12, overflow: "auto" }}>
-        <div style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary, marginBottom: 12 }}>Projects</div>
+    <div className="fo-calendar">
+      <div className="fo-calendar__sidebar">
+        <div className="fo-section-title" style={{ marginBottom: 12 }}>Projects</div>
         {state.projects.map(p => (
-          <label key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", cursor: "pointer", fontSize: 11, color: COLORS.textSecondary }}>
+          <label key={p.id} className="fo-calendar__check">
             <input type="checkbox" checked={selectedProjects.includes(p.id)} onChange={() => toggleProject(p.id)} />
             {p.title}
           </label>
         ))}
-        <div style={{ marginTop: 16, fontSize: 10, color: COLORS.textDim, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>Legend</div>
+        <div className="fo-calendar__legend-title">Legend</div>
         {[
           { color: COLORS.success, label: "Planting" },
           { color: COLORS.info, label: "PRE Application" },
@@ -2019,8 +1991,8 @@ function CalendarModule() {
           { color: "#a855f7", label: "DAT Rating" },
           { color: COLORS.danger, label: "Harvest" },
         ].map(l => (
-          <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 10, color: COLORS.textSecondary }}>
-            <div style={{ width: 8, height: 8, borderRadius: 1, background: l.color }} /> {l.label}
+          <div key={l.label} className="fo-calendar__legend-item">
+            <div className="fo-gantt__legend-dot" style={{ background: l.color }} /> {l.label}
           </div>
         ))}
         <div style={{ marginTop: 16 }}>
@@ -2030,36 +2002,32 @@ function CalendarModule() {
           }}>Today</Btn>
         </div>
       </div>
-      <div style={{ flex: 1, padding: 20, overflow: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <div className="fo-calendar__body">
+        <div className="fo-calendar__nav">
           <Btn variant="ghost" onClick={() => setCurrentMonth(new Date(year, month - 1, 1))} aria-label="Previous month">← Prev</Btn>
-          <h2 style={{ margin: 0, fontSize: 18, color: COLORS.textPrimary, fontWeight: 700 }}>
+          <h2 className="fo-calendar__month-title">
             {currentMonth.toLocaleString("default", { month: "long", year: "numeric" })}
           </h2>
           <Btn variant="ghost" onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} aria-label="Next month">Next →</Btn>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+        <div className="fo-calendar__grid">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
-            <div key={d} style={{ padding: 6, textAlign: "center", fontSize: 10, color: COLORS.textDim, fontWeight: 700, fontFamily: "'Fira Code', monospace" }}>{d}</div>
+            <div key={d} className="fo-calendar__dow">{d}</div>
           ))}
           {days.map((day, i) => {
             const dayEvents = getEventsForDay(day);
             const isToday = day && new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year;
             return (
-              <div key={i} onClick={() => day && setSelectedDay({ day, events: dayEvents })} style={{
-                minHeight: 80, padding: 4, background: day ? COLORS.bgCard : "transparent",
-                border: `1px solid ${isToday ? COLORS.accent : COLORS.border}22`,
-                borderRadius: 2, cursor: day ? "pointer" : "default"
-              }}>
+              <div key={i} onClick={() => day && setSelectedDay({ day, events: dayEvents })} className={`fo-calendar__cell${day ? "" : " fo-calendar__cell--empty"}${isToday ? " fo-calendar__cell--today" : ""}`} style={day ? { cursor: "pointer" } : {}}>
                 {day && (
                   <>
-                    <div style={{ fontSize: 11, fontWeight: isToday ? 700 : 400, color: isToday ? COLORS.accent : COLORS.textSecondary, fontFamily: "'Fira Code', monospace", marginBottom: 2 }}>{day}</div>
+                    <div className={`fo-calendar__day-num${isToday ? " fo-calendar__day-num--today" : ""}`}>{day}</div>
                     {dayEvents.slice(0, 3).map((e, ei) => (
-                      <div key={ei} style={{ fontSize: 8, padding: "1px 3px", marginBottom: 1, background: e.color + "33", color: e.color, borderRadius: 1, borderLeft: `2px solid ${e.color}`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Fira Code', monospace" }}>
+                      <div key={ei} className="fo-calendar__event" style={{ background: e.color + "33", color: e.color, borderLeft: `2px solid ${e.color}` }}>
                         {e.label}
                       </div>
                     ))}
-                    {dayEvents.length > 3 && <div style={{ fontSize: 8, color: COLORS.textDim }}>+{dayEvents.length - 3} more</div>}
+                    {dayEvents.length > 3 && <div className="fo-calendar__overflow">+{dayEvents.length - 3} more</div>}
                   </>
                 )}
               </div>
@@ -2069,13 +2037,13 @@ function CalendarModule() {
 
         {selectedDay && selectedDay.events.length > 0 && (
           <Card style={{ marginTop: 16 }}>
-            <div style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary, marginBottom: 10 }}>
+            <div className="fo-section-title" style={{ marginBottom: 10 }}>
               Events on {currentMonth.toLocaleString("default", { month: "long" })} {selectedDay.day}
             </div>
             {selectedDay.events.map((e, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: `1px solid ${COLORS.border}22` }}>
-                <div style={{ width: 10, height: 10, borderRadius: 1, background: e.color }} />
-                <span style={{ fontSize: 12, color: COLORS.textPrimary, fontWeight: 600 }}>{e.label}</span>
+              <div key={i} className="fo-day-event-row">
+                <div className="fo-gantt__legend-dot" style={{ background: e.color, width: 10, height: 10 }} />
+                <span className="fo-day-event-row__label">{e.label}</span>
                 <Badge>{e.project.title}</Badge>
                 {e.type === "application" && <Badge color={COLORS.warning}>Spray Day</Badge>}
               </div>
@@ -2120,20 +2088,20 @@ function HerbicideInventory() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+    <div className="fo-page">
+      <div className="fo-page__header" style={{ marginBottom: 16 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 20, color: COLORS.textPrimary, fontWeight: 700 }}>Herbicide Inventory</h2>
-          <p style={{ margin: "4px 0 0", fontSize: 12, color: COLORS.textDim }}>Aggregated product requirements across selected trials (includes 25% overage)</p>
+          <h2 className="fo-page__title">Herbicide Inventory</h2>
+          <p className="fo-page__subtitle">Aggregated product requirements across selected trials (includes 25% overage)</p>
         </div>
         <Btn variant="secondary" onClick={handleExport}><DownloadIcon size={14} /> Export to CSV</Btn>
       </div>
 
       <Card style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 600, fontSize: 12, color: COLORS.textSecondary, marginBottom: 8 }}>Include trials:</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <div className="fo-section-title" style={{ marginBottom: 8 }}>Include trials:</div>
+        <div className="fo-inv__filters">
           {state.projects.map(p => (
-            <label key={p.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: COLORS.textSecondary, cursor: "pointer" }}>
+            <label key={p.id} className="fo-inv__check">
               <input type="checkbox" checked={selectedProjects.includes(p.id)} onChange={() => setSelectedProjects(prev => prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id])} />
               {p.title}
             </label>
@@ -2149,21 +2117,21 @@ function HerbicideInventory() {
           { key: "total", label: "Total Required", mono: true, render: r => `${r.totalMl.toFixed(3)} mL` },
           { key: "projects", label: "Trials", render: r => <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{r.projects.map((p, i) => <Badge key={i} color={COLORS.info}>{p}</Badge>)}</div> },
         ]} data={aggregated} />
-        {aggregated.length === 0 && <p style={{ color: COLORS.textDim, fontSize: 13, textAlign: "center", padding: 20 }}>No inventory data. Select projects with uploaded ARM spray sheets.</p>}
+        {aggregated.length === 0 && <p className="fo-empty-state" style={{ textAlign: "center", padding: 20 }}>No inventory data. Select projects with uploaded ARM spray sheets.</p>}
       </Card>
 
       {selectedProjects.length > 0 && (
-        <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
+        <div className="fo-inv__cards">
           {state.projects.filter(p => selectedProjects.includes(p.id)).map(proj => (
             <Card key={proj.id}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: COLORS.textPrimary, marginBottom: 4 }}>{proj.title}</div>
-              <div style={{ fontSize: 10, color: COLORS.textDim, marginBottom: 8, fontFamily: "'Fira Code', monospace" }}>
+              <div className="fo-section-title" style={{ marginBottom: 4 }}>{proj.title}</div>
+              <div className="fo-inv__card-meta">
                 {proj.treatmentCount} TRT × {proj.reps} REP | App: {proj.appAmount} | Mix: {proj.mixSize}
               </div>
               {proj.inventory?.map((item, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderBottom: `1px solid ${COLORS.border}11` }}>
-                  <span style={{ color: COLORS.textSecondary }}>{item.product}</span>
-                  <span style={{ fontFamily: "'Fira Code', monospace", color: COLORS.textPrimary }}>{typeof item.totalRequired === "number" ? `${item.totalRequired.toFixed(3)} mL` : item.totalRequired}</span>
+                <div key={i} className="fo-inv__row">
+                  <span className="fo-inv__row-name">{item.product}</span>
+                  <span className="fo-inv__row-val">{typeof item.totalRequired === "number" ? `${item.totalRequired.toFixed(3)} mL` : item.totalRequired}</span>
                 </div>
               ))}
             </Card>
@@ -2186,32 +2154,32 @@ function FilesModule() {
   const categories = ["protocols", "spray_sheets", "data_sheets", "photos", "maps"];
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h2 style={{ margin: 0, fontSize: 20, color: COLORS.textPrimary, fontWeight: 700 }}>File Manager</h2>
+    <div className="fo-page">
+      <div className="fo-page__header" style={{ marginBottom: 16 }}>
+        <h2 className="fo-page__title">File Manager</h2>
         <Select label="" options={state.projects.map(p => ({ value: p.id, label: p.title }))} value={selectedProject} onChange={e => setSelectedProject(e.target.value)} />
       </div>
       {proj ? (
         <div>
-          <div style={{ fontSize: 12, color: COLORS.textDim, marginBottom: 16, fontFamily: "'Fira Code', monospace" }}>
+          <div className="fo-files__path">
             /{proj.title.replace(/\s+/g, "_").toLowerCase()}/
           </div>
           {categories.map(cat => {
             const files = proj.files?.filter(f => f.category === cat) || [];
             return (
               <Card key={cat} style={{ marginBottom: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontWeight: 700, fontSize: 12, color: COLORS.textPrimary, fontFamily: "'Fira Code', monospace" }}>/{cat}/</span>
+                <div className="fo-files__cat-header">
+                  <span className="fo-files__cat-name">/{cat}/</span>
                   <Badge>{files.length} files</Badge>
                 </div>
                 {files.length > 0 && (
                   <div style={{ marginTop: 8 }}>
                     {files.map(f => (
-                      <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: `1px solid ${COLORS.border}11` }}>
+                      <div key={f.id} className="fo-files__row">
                         <FileIcon size={14} color={COLORS.textDim} />
-                        <span style={{ fontSize: 12, color: COLORS.textPrimary, flex: 1 }}>{f.name}</span>
-                        <span style={{ fontSize: 10, fontFamily: "'Fira Code', monospace", color: COLORS.textDim }}>{f.size}</span>
-                        <span style={{ fontSize: 10, fontFamily: "'Fira Code', monospace", color: COLORS.textDim }}>{f.uploadDate}</span>
+                        <span className="fo-files__name">{f.name}</span>
+                        <span className="fo-files__meta">{f.size}</span>
+                        <span className="fo-files__meta">{f.uploadDate}</span>
                       </div>
                     ))}
                   </div>
@@ -2221,7 +2189,7 @@ function FilesModule() {
           })}
         </div>
       ) : (
-        <Card><p style={{ color: COLORS.textDim, fontSize: 13, textAlign: "center", padding: 20 }}>Select a project to view files</p></Card>
+        <Card><p className="fo-empty-state" style={{ textAlign: "center", padding: 20 }}>Select a project to view files</p></Card>
       )}
     </div>
   );
@@ -2238,8 +2206,8 @@ function AuditLog() {
   );
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2 style={{ margin: "0 0 16px", fontSize: 20, color: COLORS.textPrimary, fontWeight: 700 }}>Audit Log</h2>
+    <div className="fo-page">
+      <h2 className="fo-page__title" style={{ marginBottom: 16 }}>Audit Log</h2>
       <Card>
         <Table columns={[
           { key: "timestamp", label: "Timestamp", mono: true, render: r => new Date(r.timestamp).toLocaleString() },
@@ -2261,9 +2229,9 @@ function ProjectsList({ onOpenProject }) {
   const { state } = useContext(AppContext);
   const [showNew, setShowNew] = useState(false);
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h2 style={{ margin: 0, fontSize: 20, color: COLORS.textPrimary, fontWeight: 700 }}>All Projects</h2>
+    <div className="fo-page">
+      <div className="fo-page__header" style={{ marginBottom: 16 }}>
+        <h2 className="fo-page__title">All Projects</h2>
         <Btn onClick={() => setShowNew(true)}><PlusIcon size={14} /> New Project</Btn>
       </div>
       <Card>
@@ -2353,6 +2321,16 @@ export default function App() {
     document.head.appendChild(link);
   }, []);
 
+  // Load FieldOps CSS
+  useEffect(() => {
+    if (document.querySelector('link[data-fieldops-css]')) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "fieldops.css";
+    link.setAttribute("data-fieldops-css", "1");
+    document.head.appendChild(link);
+  }, []);
+
   const handleOpenProject = (proj) => { setOpenProject(proj); setPage("project-detail"); };
   const handleNavigate = (p) => { setPage(p); setOpenProject(null); };
 
@@ -2364,7 +2342,7 @@ export default function App() {
     switch (page) {
       case "home": return <HomeDashboard onNavigate={handleNavigate} onOpenProject={handleOpenProject} />;
       case "projects": return <ProjectsList onOpenProject={handleOpenProject} />;
-      case "map": return leafletLoaded ? <InteractiveMap onOpenProject={handleOpenProject} /> : <div style={{ padding: 40, color: COLORS.textDim, display: "flex", alignItems: "center", gap: 8 }}><span style={{ display: "inline-block", width: 16, height: 16, border: `2px solid ${COLORS.accent}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> Loading map...</div>;
+      case "map": return leafletLoaded ? <InteractiveMap onOpenProject={handleOpenProject} /> : <div className="fo-loading"><span className="fo-spinner" /> Loading map...</div>;
       case "calendar": return <CalendarModule />;
       case "inventory": return <HerbicideInventory />;
       case "files": return <FilesModule />;
@@ -2375,16 +2353,15 @@ export default function App() {
 
   return (
     <AppContext.Provider value={contextValue}>
-      <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: COLORS.bgDark, color: COLORS.textPrimary, fontFamily: "'DM Sans', -apple-system, sans-serif", overflow: "hidden" }}>
+      <div className="fo-app">
         <Header weather={weather} />
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <div className="fo-body">
           <Sidebar active={page === "project-detail" ? "home" : page} onNavigate={handleNavigate} />
-          <main style={{ flex: 1, overflow: "auto" }}>
+          <main className="fo-main">
             {renderPage()}
           </main>
         </div>
       </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </AppContext.Provider>
   );
 }
