@@ -67,6 +67,43 @@ function downloadCSV(filename, headers, rows) {
   URL.revokeObjectURL(url);
 }
 
+/** Returns today's date as YYYY-MM-DD */
+const today = () => new Date().toISOString().split("T")[0];
+
+/** Shoelace formula: polygon area from lat/lng coords, returns { sqft, acres } */
+function calcPolygonArea(coords) {
+  if (!coords || coords.length < 3) return { sqft: 0, acres: 0 };
+  let area = 0;
+  for (let i = 0; i < coords.length; i++) {
+    const j = (i + 1) % coords.length;
+    const lat1ft = coords[i][0] * 364000;
+    const lat2ft = coords[j][0] * 364000;
+    const lng1ft = coords[i][1] * 288200;
+    const lng2ft = coords[j][1] * 288200;
+    area += (lng1ft * lat2ft - lng2ft * lat1ft);
+  }
+  const sqft = Math.abs(area / 2);
+  return { sqft: Math.round(sqft), acres: (sqft / 43560).toFixed(3) };
+}
+
+/** Maps an audit action string to a display color */
+function getAuditActionColor(action) {
+  if (action.includes("Created")) return COLORS.success;
+  if (action.includes("Upload")) return COLORS.info;
+  if (action.includes("Map") || action.includes("Grid")) return COLORS.warning;
+  if (action.includes("Rating")) return "#a855f7";
+  return COLORS.textSecondary;
+}
+
+// ============================================================
+// DOMAIN CONSTANTS
+// ============================================================
+const APP_TIMINGS = ["PRE", "PREMEA", "EAPOWE", "POST", "LPOST"];
+const APP_PLACEMENTS = ["soil app", "post", "broadcast", "banded"];
+const FILE_CATEGORIES = ["protocols", "spray_sheets", "data_sheets", "photos", "maps"];
+const DAT_INTERVALS = [7, 14, 21, 28];
+const DAT_RATING_EVENTS = DAT_INTERVALS.map(d => `${d} DAT`);
+
 // ============================================================
 // PERSISTENCE
 // ============================================================
@@ -408,6 +445,20 @@ const ImageIcon = (p) => <Icon {...p} d={<><rect x="3" y="3" width="18" height="
 const ExternalLinkIcon = (p) => <Icon {...p} d={<><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></>} />;
 const SettingsIcon = (p) => <Icon {...p} d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>} />;
 
+const SIDEBAR_ITEMS = [
+  { id: "home",      label: "Home",                icon: HomeIcon },
+  { id: "projects",  label: "Projects",            icon: ProjectIcon },
+  { id: "map",       label: "Interactive Map",     icon: MapIcon },
+  { id: "calendar",  label: "Calendar",            icon: CalendarIcon },
+  { id: "inventory", label: "Herbicide Inventory", icon: BeakerIcon },
+  { id: "files",     label: "Files",               icon: FileIcon },
+  { id: "audit",     label: "Audit Log",           icon: ClockIcon },
+];
+
+const TOAST_COLORS = { success: COLORS.success, error: COLORS.danger, info: COLORS.info };
+
+const FIELD_COLORS = ["#22c55e", "#0ea5e9", "#f97316", "#a855f7", "#ef4444", "#eab308", "#ec4899", "#14b8a6"];
+
 // ============================================================
 // SIMULATED WEATHER
 // ============================================================
@@ -549,9 +600,9 @@ function Toast({ message, type = "success", onDismiss }) {
     return () => clearTimeout(t);
   }, [onDismiss]);
 
-  const color = type === "success" ? COLORS.success : type === "error" ? COLORS.danger : COLORS.info;
+  const color = TOAST_COLORS[type] ?? COLORS.info;
   return (
-    <div className={`fo-toast fo-toast--${type === "error" ? "error" : type === "success" ? "success" : "info"}`}>
+    <div className={`fo-toast fo-toast--${type}`}>
       {type === "success" ? <CheckCircle size={16} color={color} /> : <AlertTriangle size={16} color={color} />}
       <span className="fo-toast__msg">{message}</span>
     </div>
@@ -616,18 +667,9 @@ function Header({ weather }) {
 // SIDEBAR — keyboard-navigable
 // ============================================================
 function Sidebar({ active, onNavigate }) {
-  const items = [
-    { id: "home", label: "Home", icon: HomeIcon },
-    { id: "projects", label: "Projects", icon: ProjectIcon },
-    { id: "map", label: "Interactive Map", icon: MapIcon },
-    { id: "calendar", label: "Calendar", icon: CalendarIcon },
-    { id: "inventory", label: "Herbicide Inventory", icon: BeakerIcon },
-    { id: "files", label: "Files", icon: FileIcon },
-    { id: "audit", label: "Audit Log", icon: ClockIcon },
-  ];
   return (
     <nav className="fo-sidebar" role="navigation" aria-label="Main navigation">
-      {items.map(item => {
+      {SIDEBAR_ITEMS.map(item => {
         const isActive = active === item.id;
         return (
           <button key={item.id} onClick={() => onNavigate(item.id)} aria-current={isActive ? "page" : undefined} className={`fo-sidebar__item${isActive ? " fo-sidebar__item--active" : ""}`}>
@@ -822,7 +864,7 @@ function NewProjectModal({ open, onClose }) {
       inventory: [],
       appAmount: "15 GAL/AC",
       mixSize: "2 L",
-      files: armPdf ? [{ id: generateId(), name: armPdf.name, category: armPdf.name.endsWith('.pdf') ? "spray_sheets" : "protocols", size: `${Math.round(armPdf.size / 1024)} KB`, uploadDate: new Date().toISOString().split("T")[0] }] : [],
+      files: armPdf ? [{ id: generateId(), name: armPdf.name, category: armPdf.name.endsWith('.pdf') ? "spray_sheets" : "protocols", size: `${Math.round(armPdf.size / 1024)} KB`, uploadDate: today() }] : [],
       photos: [],
       ratings: [],
       createdAt: new Date().toISOString(),
@@ -878,8 +920,8 @@ function NewProjectModal({ open, onClose }) {
           {apps.map((a, i) => (
             <div key={i} style={{ display: "grid", gridTemplateColumns: "60px 1fr 1fr 1fr 30px", gap: 8, alignItems: "end" }}>
               <Input label="Code" value={a.code} onChange={e => updateApp(i, "code", e.target.value)} />
-              <Select label="Timing" options={["PRE","PREMEA","EAPOWE","POST","LPOST"]} value={a.timing} onChange={e => updateApp(i, "timing", e.target.value)} />
-              <Select label="Placement" options={["soil app","post","broadcast","banded"]} value={a.placement} onChange={e => updateApp(i, "placement", e.target.value)} />
+              <Select label="Timing" options={APP_TIMINGS} value={a.timing} onChange={e => updateApp(i, "timing", e.target.value)} />
+              <Select label="Placement" options={APP_PLACEMENTS} value={a.placement} onChange={e => updateApp(i, "placement", e.target.value)} />
               <Input label="Date" type="date" value={a.date} onChange={e => updateApp(i, "date", e.target.value)} />
               {apps.length > 1 && <button onClick={() => removeApp(i)} aria-label={`Remove application ${a.code}`} className="fo-icon-btn fo-icon-btn--danger"><TrashIcon size={14} /></button>}
             </div>
@@ -1197,7 +1239,7 @@ function RatingsPanel({ proj }) {
   const [selectedApp, setSelectedApp] = useState(proj.applications?.[0]?.code || "B");
   const [entries, setEntries] = useState({});
 
-  const datEvents = ["7 DAT", "14 DAT", "21 DAT", "28 DAT"];
+  const datEvents = DAT_RATING_EVENTS;
   const allPlots = useMemo(() => proj.plotMap?.flat() || [], [proj.plotMap]);
 
   const startRating = () => {
@@ -1212,7 +1254,7 @@ function RatingsPanel({ proj }) {
       type: "ADD_RATING",
       payload: {
         projectId: proj.id,
-        rating: { id: generateId(), event: selectedEvent, appCode: selectedApp, date: new Date().toISOString().split("T")[0], entries: { ...entries } }
+        rating: { id: generateId(), event: selectedEvent, appCode: selectedApp, date: today(), entries: { ...entries } }
       }
     });
     setShowForm(false);
@@ -1282,7 +1324,7 @@ function RatingsPanel({ proj }) {
 
 function ProjectFiles({ proj }) {
   const { dispatch } = useContext(AppContext);
-  const categories = ["protocols", "spray_sheets", "data_sheets", "photos", "maps"];
+  const categories = FILE_CATEGORIES;
   const fileInputRefs = useRef({});
 
   const handleFileSelect = (cat, file) => {
@@ -1290,7 +1332,7 @@ function ProjectFiles({ proj }) {
     const sizeStr = file.size >= 1024 * 1024
       ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
       : `${Math.round(file.size / 1024)} KB`;
-    const fileRecord = { id: generateId(), name: file.name, category: cat, size: sizeStr, uploadDate: new Date().toISOString().split("T")[0] };
+    const fileRecord = { id: generateId(), name: file.name, category: cat, size: sizeStr, uploadDate: today() };
     dispatch({ type: "ADD_FILE", payload: { projectId: proj.id, file: fileRecord } });
   };
 
@@ -1324,6 +1366,57 @@ function ProjectFiles({ proj }) {
 }
 
 // ============================================================
+// CUSTOM HOOKS
+// ============================================================
+
+/** Manages a single toast notification message */
+function useToast() {
+  const [toast, setToast] = useState(null);
+  return { toast, showToast: setToast, dismissToast: () => setToast(null) };
+}
+
+/** Tracks which projects are selected in a multi-select list */
+function useProjectSelection(projects) {
+  const [selectedIds, setSelectedIds] = useState(() => projects.map(p => p.id));
+  const toggle = (id) => setSelectedIds(prev =>
+    prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+  );
+  const selected = useMemo(() => projects.filter(p => selectedIds.includes(p.id)), [projects, selectedIds]);
+  return { selectedIds, toggle, selected };
+}
+
+/** Encapsulates all polygon draw-mode state for the interactive map */
+function useDrawMode() {
+  const [drawMode, setDrawMode] = useState(false);
+  const [drawFieldId, setDrawFieldId] = useState(null);
+  const [drawPoints, setDrawPoints] = useState([]);
+  const [drawLabel, setDrawLabel] = useState("");
+  const [drawProject, setDrawProject] = useState("");
+  const drawModeRef = useRef(false);
+  useEffect(() => { drawModeRef.current = drawMode; }, [drawMode]);
+
+  const beginDraw = (fieldId) => {
+    setDrawFieldId(fieldId);
+    setDrawMode(true);
+    setDrawPoints([]);
+    setDrawLabel("");
+    setDrawProject("");
+  };
+
+  const addDrawPoint = (lat, lng) => setDrawPoints(prev => [...prev, [lat, lng]]);
+
+  const resetDraw = () => {
+    setDrawPoints([]);
+    setDrawMode(false);
+    setDrawFieldId(null);
+    setDrawLabel("");
+    setDrawProject("");
+  };
+
+  return { drawMode, drawFieldId, drawPoints, drawLabel, drawProject, drawModeRef, setDrawLabel, setDrawProject, beginDraw, addDrawPoint, resetDraw };
+}
+
+// ============================================================
 // INTERACTIVE MAP — field-centric GIS with image overlays
 // ============================================================
 
@@ -1331,21 +1424,6 @@ function ProjectFiles({ proj }) {
 function FieldLayerPanel({ field, isExpanded, onToggle, onSelect, isSelected, projects, onUploadImage, onToggleImage, onOpacityChange, onDrawInField, onGenerateGrid, onDeletePoly, onOpenProject, showGrid, onHighlightPoly, selectedPolyId }) {
   const fileInputRef = useRef(null);
   const fieldProjects = field.polygons.map(p => ({ poly: p, project: projects.find(pr => pr.id === p.projectId) }));
-
-  const calcArea = (coords) => {
-    if (!coords || coords.length < 3) return { sqft: 0, acres: 0 };
-    let area = 0;
-    for (let i = 0; i < coords.length; i++) {
-      const j = (i + 1) % coords.length;
-      const lat1ft = coords[i][0] * 364000;
-      const lat2ft = coords[j][0] * 364000;
-      const lng1ft = coords[i][1] * 288200;
-      const lng2ft = coords[j][1] * 288200;
-      area += (lng1ft * lat2ft - lng2ft * lat1ft);
-    }
-    const sqft = Math.abs(area / 2);
-    return { sqft: Math.round(sqft), acres: (sqft / 43560).toFixed(3) };
-  };
 
   return (
     <div className={`fo-field-panel${isSelected ? " fo-field-panel--selected" : ""}`} style={isSelected ? { background: field.color + "12", borderColor: field.color + "66" } : {}}>
@@ -1386,7 +1464,7 @@ function FieldLayerPanel({ field, isExpanded, onToggle, onSelect, isSelected, pr
 
           {/* Project area polygons */}
           {fieldProjects.map(({ poly, project }) => {
-            const area = calcArea(poly.coords);
+            const area = calcPolygonArea(poly.coords);
             const isPolySelected = selectedPolyId === poly.id;
             return (
               <div key={poly.id} onClick={() => onHighlightPoly(field.id, poly)} className={`fo-poly-item${isPolySelected ? " fo-poly-item--selected" : ""}`}>
@@ -1431,7 +1509,8 @@ function InteractiveMap({ onOpenProject }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const leafletLayers = useRef({ fields: {}, polys: {}, grids: {}, images: {} });
-  const [toast, setToast] = useState(null);
+  const { toast, showToast, dismissToast } = useToast();
+  const { drawMode, drawFieldId, drawPoints, drawLabel, drawProject, drawModeRef, setDrawLabel, setDrawProject, beginDraw, addDrawPoint, resetDraw } = useDrawMode();
 
   // UI state
   const [expandedField, setExpandedField] = useState(state.fields[0]?.id || null);
@@ -1439,22 +1518,11 @@ function InteractiveMap({ onOpenProject }) {
   const [selectedPolyId, setSelectedPolyId] = useState(null);
   const [showGrid, setShowGrid] = useState(null);
 
-  // Draw mode
-  const [drawMode, setDrawMode] = useState(false);
-  const [drawFieldId, setDrawFieldId] = useState(null);
-  const [drawPoints, setDrawPoints] = useState([]);
-  const [drawLabel, setDrawLabel] = useState("");
-  const [drawProject, setDrawProject] = useState("");
-  const drawModeRef = useRef(false);
-  useEffect(() => { drawModeRef.current = drawMode; }, [drawMode]);
-
   // New field modal
   const [showNewField, setShowNewField] = useState(false);
   const [newFieldName, setNewFieldName] = useState("");
   const [newFieldAcres, setNewFieldAcres] = useState("");
   const [newFieldSite, setNewFieldSite] = useState(() => state.sites[0]?.id || "");
-
-  const FIELD_COLORS = ["#22c55e", "#0ea5e9", "#f97316", "#a855f7", "#ef4444", "#eab308", "#ec4899", "#14b8a6"];
 
   // ---- MAP INITIALIZATION ----
   useEffect(() => {
@@ -1482,7 +1550,7 @@ function InteractiveMap({ onOpenProject }) {
     // Click handler for polygon drawing
     map.on("click", (e) => {
       if (!drawModeRef.current) return;
-      setDrawPoints(prev => [...prev, [e.latlng.lat, e.latlng.lng]]);
+      addDrawPoint(e.latlng.lat, e.latlng.lng);
     });
 
     return () => { map.remove(); mapInstanceRef.current = null; };
@@ -1609,7 +1677,7 @@ function InteractiveMap({ onOpenProject }) {
     if (!field || !field.bounds) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      setToast(`Warning: large image (${(file.size / (1024 * 1024)).toFixed(1)} MB) — will not persist after page refresh`);
+      showToast(`Warning: large image (${(file.size / (1024 * 1024)).toFixed(1)} MB) — will not persist after page refresh`);
     }
 
     const reader = new FileReader();
@@ -1626,7 +1694,7 @@ function InteractiveMap({ onOpenProject }) {
           fieldId, imageOverlay: { dataUrl: e.target.result, bounds: imgBounds, opacity: 0.7, visible: true }
         }
       });
-      setToast(`Image layer added to ${field.name} (re-upload required after refresh)`);
+      showToast(`Image layer added to ${field.name} (re-upload required after refresh)`);
     };
     reader.readAsDataURL(file);
   };
@@ -1649,11 +1717,7 @@ function InteractiveMap({ onOpenProject }) {
   const startDrawInField = (fieldId) => {
     const field = state.fields.find(f => f.id === fieldId);
     if (!field) return;
-    setDrawFieldId(fieldId);
-    setDrawMode(true);
-    setDrawPoints([]);
-    setDrawLabel("");
-    setDrawProject("");
+    beginDraw(fieldId);
     setExpandedField(fieldId);
 
     // Zoom to field
@@ -1684,12 +1748,8 @@ function InteractiveMap({ onOpenProject }) {
     };
 
     dispatch({ type: "ADD_FIELD_POLYGON", payload: { fieldId: drawFieldId, polygon: newPoly } });
-    setDrawPoints([]);
-    setDrawMode(false);
-    setDrawFieldId(null);
-    setDrawLabel("");
-    setDrawProject("");
-    setToast(`Area "${newPoly.label}" added to ${field?.name}`);
+    resetDraw();
+    showToast(`Area "${newPoly.label}" added to ${field?.name}`);
   };
 
   const cancelDraw = () => {
@@ -1697,9 +1757,7 @@ function InteractiveMap({ onOpenProject }) {
       try { mapInstanceRef.current?.removeLayer(leafletLayers.current._drawPreview); } catch {}
       delete leafletLayers.current._drawPreview;
     }
-    setDrawPoints([]);
-    setDrawMode(false);
-    setDrawFieldId(null);
+    resetDraw();
   };
 
   const handleDeletePoly = (fieldId, polyId) => {
@@ -1798,7 +1856,7 @@ function InteractiveMap({ onOpenProject }) {
     setNewFieldName("");
     setNewFieldAcres("");
     setExpandedField(newField.id);
-    setToast(`Field "${newField.name}" created`);
+    showToast(`Field "${newField.name}" created`);
 
     // Fly to new field
     setTimeout(() => handleFlyToField(newField), 100);
@@ -1906,7 +1964,7 @@ function InteractiveMap({ onOpenProject }) {
         </div>
       </Modal>
 
-      {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
+      {toast && <Toast message={toast} onDismiss={dismissToast} />}
     </div>
   );
 }
@@ -1916,19 +1974,13 @@ function InteractiveMap({ onOpenProject }) {
 // ============================================================
 function CalendarModule() {
   const { state } = useContext(AppContext);
-  const [selectedProjects, setSelectedProjects] = useState(state.projects.map(p => p.id));
-  // FIX: Use current date instead of hardcoded April 2025
+  const { selectedIds: selectedProjects, toggle: toggleProject } = useProjectSelection(state.projects);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [selectedDay, setSelectedDay] = useState(null);
 
-  const toggleProject = (id) => {
-    setSelectedProjects(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
-
-  // FIX: memoize expensive event computation
   const events = useMemo(() => {
     const evts = [];
     state.projects.filter(p => selectedProjects.includes(p.id)).forEach(proj => {
@@ -1938,7 +1990,7 @@ function CalendarModule() {
         if (app.date) {
           evts.push({ date: app.date, type: "application", label: `App ${app.code} (${app.timing})`, project: proj, color: app.timing?.includes("PRE") ? COLORS.info : COLORS.warning });
           if (app.timing && !app.timing.includes("PRE")) {
-            [7, 14, 21, 28].forEach(dat => {
+            DAT_INTERVALS.forEach(dat => {
               const datDate = new Date(app.date);
               datDate.setDate(datDate.getDate() + dat);
               evts.push({ date: datDate.toISOString().split("T")[0], type: "rating", label: `${dat} DAT (App ${app.code})`, project: proj, color: "#a855f7" });
@@ -2060,8 +2112,8 @@ function CalendarModule() {
 // ============================================================
 function HerbicideInventory() {
   const { state } = useContext(AppContext);
-  const [selectedProjects, setSelectedProjects] = useState(state.projects.map(p => p.id));
-  const [toast, setToast] = useState(null);
+  const { selectedIds: selectedProjects, toggle: toggleProject } = useProjectSelection(state.projects);
+  const { toast, showToast, dismissToast } = useToast();
 
   const aggregated = useMemo(() => {
     const map = {};
@@ -2083,8 +2135,8 @@ function HerbicideInventory() {
   const handleExport = () => {
     const headers = ["Product", "Formulation", "Type", "Total Required (mL)", "Trials"];
     const rows = aggregated.map(r => [r.product, r.formConc, r.formType, r.totalMl.toFixed(3), r.projects.join("; ")]);
-    downloadCSV(`herbicide_inventory_${new Date().toISOString().split("T")[0]}.csv`, headers, rows);
-    setToast("Inventory exported as CSV");
+    downloadCSV(`herbicide_inventory_${today()}.csv`, headers, rows);
+    showToast("Inventory exported as CSV");
   };
 
   return (
@@ -2102,7 +2154,7 @@ function HerbicideInventory() {
         <div className="fo-inv__filters">
           {state.projects.map(p => (
             <label key={p.id} className="fo-inv__check">
-              <input type="checkbox" checked={selectedProjects.includes(p.id)} onChange={() => setSelectedProjects(prev => prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id])} />
+              <input type="checkbox" checked={selectedProjects.includes(p.id)} onChange={() => toggleProject(p.id)} />
               {p.title}
             </label>
           ))}
@@ -2139,7 +2191,7 @@ function HerbicideInventory() {
         </div>
       )}
 
-      {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
+      {toast && <Toast message={toast} onDismiss={dismissToast} />}
     </div>
   );
 }
@@ -2151,7 +2203,7 @@ function FilesModule() {
   const { state } = useContext(AppContext);
   const [selectedProject, setSelectedProject] = useState(state.projects[0]?.id || "");
   const proj = state.projects.find(p => p.id === selectedProject);
-  const categories = ["protocols", "spray_sheets", "data_sheets", "photos", "maps"];
+  const categories = FILE_CATEGORIES;
 
   return (
     <div className="fo-page">
@@ -2211,9 +2263,7 @@ function AuditLog() {
       <Card>
         <Table columns={[
           { key: "timestamp", label: "Timestamp", mono: true, render: r => new Date(r.timestamp).toLocaleString() },
-          { key: "action", label: "Action", render: r => <Badge color={
-            r.action.includes("Created") ? COLORS.success : r.action.includes("Upload") ? COLORS.info : r.action.includes("Map") || r.action.includes("Grid") ? COLORS.warning : r.action.includes("Rating") ? "#a855f7" : COLORS.textSecondary
-          }>{r.action}</Badge> },
+          { key: "action", label: "Action", render: r => <Badge color={getAuditActionColor(r.action)}>{r.action}</Badge> },
           { key: "detail", label: "Detail" },
           { key: "user", label: "User" },
         ]} data={sorted} />
