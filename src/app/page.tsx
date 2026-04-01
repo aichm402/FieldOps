@@ -11,6 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { formatQuantity, type DisplayUnit } from "@/lib/units";
+import { LogoIcon } from "@/components/Logo";
 
 interface Analytics {
   summary: {
@@ -66,11 +67,16 @@ export default function DashboardPage() {
     <div style={{ maxWidth: 1200 }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
-        <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em" }}>Dashboard</h1>
-          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", marginTop: 4 }}>
-            Herbicide inventory overview
-          </p>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <LogoIcon size={52} />
+          <div>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
+              Inventory<span style={{ color: "var(--accent)" }}>Ops</span>
+            </h1>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", marginTop: 2 }}>
+              Herbicide inventory overview
+            </p>
+          </div>
         </div>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
           <select

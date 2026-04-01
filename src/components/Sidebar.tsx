@@ -2,14 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Package,
-  FolderOpen,
-  BarChart3,
-  Upload,
-  Beaker,
-} from "lucide-react";
+import { LayoutDashboard, Package, FolderOpen, BarChart3, Upload } from "lucide-react";
+import { LogoFull } from "@/components/Logo";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -40,34 +34,11 @@ export default function Sidebar() {
       {/* Logo */}
       <div
         style={{
-          padding: "1.5rem 1.25rem",
+          padding: "1.25rem 1rem",
           borderBottom: "1px solid var(--border)",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.625rem",
         }}
       >
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            background: "var(--accent-muted)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Beaker size={18} color="var(--accent)" />
-        </div>
-        <div>
-          <div style={{ fontWeight: 600, fontSize: "0.9375rem", letterSpacing: "-0.01em" }}>
-            InventoryOps
-          </div>
-          <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
-            Herbicide Inventory
-          </div>
-        </div>
+        <LogoFull iconSize={38} />
       </div>
 
       {/* Nav */}
@@ -90,15 +61,15 @@ export default function Sidebar() {
                 padding: "0.625rem 0.75rem",
                 borderRadius: 6,
                 fontSize: "0.875rem",
-                fontWeight: isActive ? 500 : 400,
-                color: isActive ? "var(--text-primary)" : "var(--text-secondary)",
-                background: isActive ? "var(--bg-hover)" : "transparent",
+                fontWeight: isActive ? 600 : 400,
+                color: isActive ? "var(--accent)" : "var(--text-secondary)",
+                background: isActive ? "var(--accent-muted)" : "transparent",
                 textDecoration: "none",
                 marginBottom: "0.125rem",
                 transition: "all 0.15s",
               }}
             >
-              <Icon size={18} style={{ opacity: isActive ? 1 : 0.6 }} />
+              <Icon size={18} color={isActive ? "var(--accent)" : undefined} style={{ opacity: isActive ? 1 : 0.5 }} />
               {item.label}
             </Link>
           );

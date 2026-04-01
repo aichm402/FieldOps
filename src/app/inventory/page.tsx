@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Search, Edit3, Check, X, Trash2, Plus, Download, Pencil } from "lucide-react";
+import { Search, Edit3, Check, X, Trash2, Plus, FileDown, Pencil } from "lucide-react";
 import { formatQuantity, fromMl, toMl, type DisplayUnit } from "@/lib/units";
 
 interface InventoryItem {
@@ -103,11 +103,12 @@ export default function InventoryPage() {
 
   const downloadCsv = () => {
     const rows = [
-      ["Product", `Required (${unit})`, `On Hand (${unit})`, "Status"],
+      ["Product", `Required (${unit})`, `On Hand (${unit})`, `Deficit (${unit})`, "Status"],
       ...filtered.map((item) => [
         item.canonical_name,
         formatQuantity(item.total_required_ml, unit),
         formatQuantity(item.quantity_on_hand_ml, unit),
+        formatQuantity(item.deficit_ml, unit),
         item.status,
       ]),
     ];
@@ -119,46 +120,6 @@ export default function InventoryPage() {
     a.download = "inventory.csv";
     a.click();
     URL.revokeObjectURL(url);
-  };
-
-  const downloadPdf = () => {
-    const rows = filtered
-      .map(
-        (item) => `
-        <tr>
-          <td>${item.canonical_name}</td>
-          <td class="num">${formatQuantity(item.total_required_ml, unit)}</td>
-          <td class="num">${formatQuantity(item.quantity_on_hand_ml, unit)}</td>
-          <td class="${item.status}">${item.status === "out" ? "Out" : item.status === "low" ? "Low" : "OK"}</td>
-        </tr>`
-      )
-      .join("");
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Inventory</title><style>
-      body{font-family:sans-serif;font-size:12px;margin:2rem}
-      h1{font-size:1.25rem;margin-bottom:0.25rem}
-      p{color:#666;margin:0 0 1rem}
-      table{border-collapse:collapse;width:100%}
-      th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}
-      th{background:#f5f5f5;font-weight:600}
-      .num{text-align:right;font-family:monospace}
-      .out{color:#dc2626;font-weight:600}
-      .low{color:#d97706;font-weight:600}
-      .sufficient{color:#16a34a}
-      @media print{body{margin:0}}
-    </style></head><body>
-      <h1>Inventory Sheet</h1>
-      <p>Generated ${new Date().toLocaleDateString()} &mdash; values in ${unit}</p>
-      <table>
-        <thead><tr><th>Product</th><th>Required (${unit})</th><th>On Hand (${unit})</th><th>Status</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </body></html>`;
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    win.print();
   };
 
   const statusCounts = {
@@ -206,19 +167,7 @@ export default function InventoryPage() {
             }}
             title="Download spreadsheet (CSV)"
           >
-            <Download size={15} /> CSV
-          </button>
-          <button
-            onClick={downloadPdf}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              background: "transparent", color: "var(--text-secondary)",
-              padding: "0.5rem 0.875rem", borderRadius: 6,
-              fontSize: "0.875rem", fontWeight: 500, border: "1px solid var(--border)", cursor: "pointer",
-            }}
-            title="Download PDF"
-          >
-            <Download size={15} /> PDF
+            <FileDown size={15} /> Export CSV
           </button>
           <button
             onClick={() => setShowAdd(true)}
