@@ -1,0 +1,55 @@
+/**
+ * Validate that extracted text is from an ARM-generated PDF.
+ * Checks for at least 3 of 6 known ARM markers.
+ */
+export function validateArm(text: string): {
+  isArm: boolean;
+  markersFound: string[];
+  confidence: number;
+} {
+  const markers: { name: string; test: () => boolean }[] = [
+    {
+      name: 'ARM version string',
+      test: () => /ARM\s+20\d{2}\.\d+/i.test(text),
+    },
+    {
+      name: 'ARM document type',
+      test: () =>
+        /Trial Map|Spray Plan|Protocol Description|Site Description|Protocol Treatments/i.test(text),
+    },
+    {
+      name: 'Treatment table header',
+      test: () => {
+        // "Trt" near "Treatment" within 100 chars
+        const trtMatch = text.match(/Trt/g);
+        const treatMatch = text.match(/Treatment/g);
+        return !!(trtMatch && treatMatch);
+      },
+    },
+    {
+      name: 'Application code/timing',
+      test: () => /Appl\s*Code|Appl\s*Timing|Appl\s*Amount/i.test(text),
+    },
+    {
+      name: 'Mix size and plots',
+      test: () => /Mix\s*Size/i.test(text) && /Plots:/i.test(text),
+    },
+    {
+      name: 'Rate units',
+      test: () => /fl\s*oz\/a|qt\/a|pt\/a|oz\/a|lb\/a|oz\s*wt\/a/i.test(text),
+    },
+  ];
+
+  const found: string[] = [];
+  for (const marker of markers) {
+    if (marker.test()) {
+      found.push(marker.name);
+    }
+  }
+
+  return {
+    isArm: found.length >= 3,
+    markersFound: found,
+    confidence: found.length / markers.length,
+  };
+}

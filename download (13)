@@ -1,0 +1,90 @@
+'use client';
+
+import useSWR from 'swr';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+export interface FieldPlot {
+  id: string;
+  fieldId: string;
+  projectId: string;
+  polygonData: string;
+  color: string;
+  project?: { id: string; title: string; crop: string };
+}
+
+export interface Field {
+  id: string;
+  name: string;
+  imagePath: string;
+  imageWidth: number;
+  imageHeight: number;
+  plots?: FieldPlot[];
+  createdAt: string;
+}
+
+export function useFields() {
+  const { data, error, isLoading, mutate } = useSWR<Field[]>('/api/fields', fetcher);
+  return { fields: data || [], isLoading, isError: error, mutate };
+}
+
+export function useField(id: string | null) {
+  const { data, error, isLoading, mutate } = useSWR<Field>(
+    id ? `/api/fields/${id}` : null,
+    fetcher
+  );
+  return { field: data, isLoading, isError: error, mutate };
+}
+
+export async function uploadField(file: File, name: string): Promise<Field> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('name', name);
+  const res = await fetch('/api/fields', { method: 'POST', body: formData });
+  return res.json();
+}
+
+export async function updateField(id: string, data: Partial<Field>) {
+  const res = await fetch(`/api/fields/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function deleteField(id: string) {
+  const res = await fetch(`/api/fields/${id}`, { method: 'DELETE' });
+  return res.json();
+}
+
+export async function createPlot(data: {
+  fieldId: string;
+  projectId: string;
+  polygonData: { x: number; y: number }[];
+  color?: string;
+}): Promise<FieldPlot> {
+  const res = await fetch('/api/plots', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...data,
+      polygonData: JSON.stringify(data.polygonData),
+    }),
+  });
+  return res.json();
+}
+
+export async function updatePlot(id: string, data: Partial<FieldPlot>) {
+  const res = await fetch(`/api/plots/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function deletePlot(id: string) {
+  const res = await fetch(`/api/plots/${id}`, { method: 'DELETE' });
+  return res.json();
+}

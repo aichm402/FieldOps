@@ -1,0 +1,81 @@
+'use client';
+
+import useSWR from 'swr';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+export interface Project {
+  id: string;
+  title: string;
+  trialId?: string | null;
+  protocolId?: string | null;
+  crop: string;
+  contacts?: string | null;
+  objectives?: string | null;
+  notes?: string | null;
+  treatmentCount: number;
+  plotWidth?: number | null;
+  plotLength?: number | null;
+  reps?: number | null;
+  designType?: string | null;
+  year?: number | null;
+  location?: string | null;
+  plantingDate?: string | null;
+  emergenceDate?: string | null;
+  preAppDate?: string | null;
+  postAppDate?: string | null;
+  pdfFilename?: string | null;
+  createdAt: string;
+  treatments?: Treatment[];
+}
+
+export interface Treatment {
+  id: string;
+  trtNumber: number;
+  code?: string | null;
+  description: string;
+  products: string;
+  plotNumbers?: string | null;
+}
+
+export function useProjects(filters?: { search?: string; crop?: string; year?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.search) params.set('search', filters.search);
+  if (filters?.crop) params.set('crop', filters.crop);
+  if (filters?.year) params.set('year', filters.year);
+
+  const queryString = params.toString();
+  const url = `/api/projects${queryString ? `?${queryString}` : ''}`;
+
+  const { data, error, isLoading, mutate } = useSWR<Project[]>(url, fetcher);
+
+  return {
+    projects: data || [],
+    isLoading,
+    isError: error,
+    mutate,
+  };
+}
+
+export function useProject(id: string | null) {
+  const { data, error, isLoading, mutate } = useSWR<Project>(
+    id ? `/api/projects/${id}` : null,
+    fetcher
+  );
+
+  return { project: data, isLoading, isError: error, mutate };
+}
+
+export async function updateProject(id: string, data: Partial<Project>) {
+  const res = await fetch(`/api/projects/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function deleteProject(id: string) {
+  const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+  return res.json();
+}

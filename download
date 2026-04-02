@@ -1,0 +1,92 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Project {
+  id              String       @id @default(cuid())
+
+  // --- Required (parsed from ARM PDF) ---
+  title           String
+  trialId         String?
+  protocolId      String?
+  crop            String
+  contacts        String?      // JSON: {sponsor, studyDirector, investigator, cooperator}
+  objectives      String?
+  notes           String?
+
+  // --- Parsed numeric/structured ---
+  treatmentCount  Int
+  plotWidth       Float?
+  plotLength      Float?
+  reps            Int?
+  designType      String?
+  year            Int?
+  location        String?
+
+  // --- User-editable date fields (initially blank) ---
+  plantingDate    DateTime?
+  emergenceDate   DateTime?
+  preAppDate      DateTime?
+  postAppDate     DateTime?
+
+  // --- File reference ---
+  pdfFilename     String?
+  pdfPath         String?
+
+  // --- Relationships ---
+  treatments      Treatment[]
+  fieldPlots      FieldPlot[]
+
+  // --- Timestamps ---
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model Treatment {
+  id              String       @id @default(cuid())
+  projectId       String
+  project         Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  trtNumber       Int
+  code            String?
+  description     String
+  products        String       // JSON array of product objects
+  plotNumbers     String?      // JSON array of plot numbers
+
+  @@index([projectId])
+}
+
+model Field {
+  id              String       @id @default(cuid())
+  name            String
+  imagePath       String
+  imageWidth      Int
+  imageHeight     Int
+
+  plots           FieldPlot[]
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model FieldPlot {
+  id              String       @id @default(cuid())
+  fieldId         String
+  field           Field        @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  projectId       String
+  project         Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  polygonData     String       // JSON: [{x, y}, ...]
+  color           String       @default("#22c55e")
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([fieldId])
+  @@index([projectId])
+}

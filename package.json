@@ -1,0 +1,114 @@
+// ============================================================
+// FieldOps Shared Types
+// ============================================================
+
+export interface ParsedProduct {
+  name: string;
+  formConc?: string;
+  formUnit?: string;
+  formType?: string;
+  rate?: string;
+  rateUnit?: string;
+  applCode?: string;
+  applTiming?: string;
+}
+
+export interface ParsedTreatment {
+  trtNumber: number;
+  code?: string;
+  description: string;
+  products: ParsedProduct[];
+  plotNumbers: number[];
+}
+
+export interface ParsedContacts {
+  studyDirector?: string;
+  sponsor?: string;
+  investigator?: string;
+  cooperator?: string;
+}
+
+export interface ParsedProject {
+  title: string;
+  trialId?: string;
+  protocolId?: string;
+  crop: string;
+  contacts: ParsedContacts;
+  objectives?: string;
+  treatmentCount: number;
+  plotWidth?: number;
+  plotLength?: number;
+  reps?: number;
+  designType?: string;
+  year?: number;
+  location?: string;
+  treatments: ParsedTreatment[];
+}
+
+export interface ParseResult {
+  success: boolean;
+  project?: ParsedProject;
+  warnings: string[];
+  parseConfidence: 'high' | 'medium' | 'low';
+  error?: string;
+  message?: string;
+  filename?: string;
+}
+
+// API response types
+export interface ProjectResponse {
+  id: string;
+  title: string;
+  trialId?: string | null;
+  protocolId?: string | null;
+  crop: string;
+  contacts?: string | null;
+  objectives?: string | null;
+  notes?: string | null;
+  treatmentCount: number;
+  plotWidth?: number | null;
+  plotLength?: number | null;
+  reps?: number | null;
+  designType?: string | null;
+  year?: number | null;
+  location?: string | null;
+  plantingDate?: string | null;
+  emergenceDate?: string | null;
+  preAppDate?: string | null;
+  postAppDate?: string | null;
+  pdfFilename?: string | null;
+  pdfPath?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  treatments?: TreatmentResponse[];
+  fieldPlots?: FieldPlotResponse[];
+}
+
+export interface TreatmentResponse {
+  id: string;
+  trtNumber: number;
+  code?: string | null;
+  description: string;
+  products: string;
+  plotNumbers?: string | null;
+}
+
+export interface FieldResponse {
+  id: string;
+  name: string;
+  imagePath: string;
+  imageWidth: number;
+  imageHeight: number;
+  plots?: FieldPlotResponse[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FieldPlotResponse {
+  id: string;
+  fieldId: string;
+  projectId: string;
+  polygonData: string;
+  color: string;
+  project?: { id: string; title: string; crop: string };
+}
