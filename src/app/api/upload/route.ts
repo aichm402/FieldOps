@@ -43,12 +43,16 @@ export async function POST(req: NextRequest) {
     // Create project record
     const projectId = uuid();
     run(
-      `INSERT INTO projects (id, name, source_filename, status) VALUES (?, ?, ?, ?)`,
+      `INSERT INTO projects (id, name, source_filename, status, crop, application_timings) VALUES (?, ?, ?, ?, ?, ?)`,
       [
         projectId,
         parseResult.projectName,
         savedFilename,
         parseResult.products.length > 0 ? "parsed" : "needs_review",
+        parseResult.crop ?? null,
+        parseResult.applicationTimings.length > 0
+          ? JSON.stringify(parseResult.applicationTimings)
+          : null,
       ]
     );
 

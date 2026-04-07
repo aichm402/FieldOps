@@ -48,7 +48,9 @@ function initializeSchema(database: Database.Database) {
       source_filename TEXT NOT NULL,
       upload_date TEXT NOT NULL DEFAULT (datetime('now')),
       status TEXT NOT NULL DEFAULT 'parsed',
-      notes TEXT
+      notes TEXT,
+      crop TEXT,
+      application_timings TEXT
     );
 
     CREATE TABLE IF NOT EXISTS inventory_requirements (
@@ -73,11 +75,42 @@ function initializeSchema(database: Database.Database) {
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS calendar_events (
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      title TEXT NOT NULL,
+      notes TEXT,
+      color TEXT NOT NULL DEFAULT 'accent',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS calendar_event_projects (
+      event_id TEXT NOT NULL,
+      project_id TEXT NOT NULL,
+      PRIMARY KEY (event_id, project_id),
+      FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE,
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_req_product  ON inventory_requirements(product_id);
     CREATE INDEX IF NOT EXISTS idx_req_project  ON inventory_requirements(project_id);
     CREATE INDEX IF NOT EXISTS idx_stock_product ON inventory_stock(product_id);
     CREATE INDEX IF NOT EXISTS idx_aliases_product ON product_aliases(product_id);
+    CREATE INDEX IF NOT EXISTS idx_events_date ON calendar_events(date);
+    CREATE INDEX IF NOT EXISTS idx_event_projects_event ON calendar_event_projects(event_id);
   `);
+
+  // Migrate existing databases that predate crop/application_timings columns
+  const cols = database
+    .prepare(`PRAGMA table_info(projects)`)
+    .all() as { name: string }[];
+  const colNames = new Set(cols.map((c) => c.name));
+  if (!colNames.has("crop")) {
+    database.exec(`ALTER TABLE projects ADD COLUMN crop TEXT`);
+  }
+  if (!colNames.has("application_timings")) {
+    database.exec(`ALTER TABLE projects ADD COLUMN application_timings TEXT`);
+  }
 }
 
 export function query<T = Record<string, unknown>>(

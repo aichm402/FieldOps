@@ -6,14 +6,14 @@ import {
   Package,
   FolderOpen,
   AlertTriangle,
-  TrendingUp,
   Upload,
   ChevronRight,
   ChevronDown,
   ChevronUp,
+  CalendarDays,
 } from "lucide-react";
-import { formatQuantity, type DisplayUnit } from "@/lib/units";
-import { LogoIcon } from "@/components/Logo";
+import { formatQuantity } from "@/lib/units";
+import { LogoFull } from "@/components/Logo";
 
 interface Analytics {
   summary: {
@@ -54,23 +54,50 @@ interface ProjectDetail extends Project {
   requirements: ProjectRequirement[];
 }
 
+const CARD_STYLE: React.CSSProperties = {
+  background: "var(--bg-card)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  overflow: "hidden",
+};
+
+const CARD_HEADER_STYLE: React.CSSProperties = {
+  padding: "1rem 1.25rem",
+  borderBottom: "1px solid var(--border)",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+};
+
 export default function DashboardPage() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [unit, setUnit] = useState<DisplayUnit>("mL");
+  const unit = "mL" as const;
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ProjectDetail | null>(null);
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/analytics").then((r) => r.json()),
-      fetch("/api/projects").then((r) => r.json()),
-    ]).then(([a, projs]) => {
-      setAnalytics(a);
-      setProjects(projs);
-      setLoading(false);
-    });
+      fetch("/api/analytics").then((r) => {
+        if (!r.ok) throw new Error("Failed to load analytics");
+        return r.json();
+      }),
+      fetch("/api/projects").then((r) => {
+        if (!r.ok) throw new Error("Failed to load projects");
+        return r.json();
+      }),
+    ])
+      .then(([a, projs]) => {
+        setAnalytics(a);
+        setProjects(projs);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message ?? "Failed to load dashboard");
+        setLoading(false);
+      });
   }, []);
 
   const toggleExpand = async (id: string) => {
@@ -80,8 +107,13 @@ export default function DashboardPage() {
       return;
     }
     setExpandedId(id);
-    const res = await fetch(`/api/projects/${id}`);
-    setDetail(await res.json());
+    try {
+      const res = await fetch(`/api/projects/${id}`);
+      if (!res.ok) throw new Error("Failed to load project details");
+      setDetail(await res.json());
+    } catch {
+      setExpandedId(null);
+    }
   };
 
   if (loading) {
@@ -92,34 +124,24 @@ export default function DashboardPage() {
     );
   }
 
-  const s = analytics?.summary;
+  if (error) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+        <div style={{ color: "var(--danger)", fontSize: "0.875rem" }}>{error}</div>
+      </div>
+    );
+  }
+
+  const summary = analytics?.summary;
 
   return (
     <div style={{ maxWidth: 1200 }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <LogoIcon size={52} />
-          <div>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
-              Inventory<span style={{ color: "var(--accent)" }}>Ops</span>
-            </h1>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", marginTop: 2 }}>
-              Herbicide inventory overview
-            </p>
-          </div>
+          <LogoFull iconSize={80} />
         </div>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-          <select
-            value={unit}
-            onChange={(e) => setUnit(e.target.value as DisplayUnit)}
-            style={{ padding: "0.375rem 0.625rem", fontSize: "0.8125rem" }}
-          >
-            <option value="mL">mL</option>
-            <option value="L">L</option>
-            <option value="gal">Gallons</option>
-            <option value="fl oz">fl oz</option>
-          </select>
           <Link
             href="/upload"
             style={{
@@ -136,36 +158,23 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
-        <Link href="/inventory" style={{ textDecoration: "none", display: "block" }}>
-          <StatCard icon={<Package size={20} />} label="Products" value={s?.total_products ?? 0} color="var(--accent)" clickable />
-        </Link>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
         <Link href="/projects" style={{ textDecoration: "none", display: "block" }}>
-          <StatCard icon={<FolderOpen size={20} />} label="Projects" value={s?.total_projects ?? 0} color="var(--success)" clickable />
+          <StatCard icon={<FolderOpen size={20} />} label="Projects" value={summary?.total_projects ?? 0} color="var(--success)" clickable />
         </Link>
-
-        <Link href="/analytics" style={{ textDecoration: "none", display: "block" }}>
-          <StatCard
-            icon={<TrendingUp size={20} />}
-            label="Total Required"
-            value={`${formatQuantity(s?.total_required_ml ?? 0, unit)} ${unit}`}
-            color="var(--accent)"
-            clickable
-          />
+        <Link href="/inventory" style={{ textDecoration: "none", display: "block" }}>
+          <StatCard icon={<Package size={20} />} label="Products" value={summary?.total_products ?? 0} color="var(--accent)" clickable />
         </Link>
-        <StatCard
-          icon={<AlertTriangle size={20} />}
-          label="Flagged Products"
-          value={projects.reduce((n, p) => n + p.flagged_count, 0)}
-          color={projects.some((p) => p.flagged_count > 0) ? "var(--warning, #f59e0b)" : "var(--success)"}
-        />
+        <Link href="/calendar" style={{ textDecoration: "none", display: "block" }}>
+          <StatCard icon={<CalendarDays size={20} />} label="Calendar" value="View Schedule" color="var(--accent)" clickable />
+        </Link>
       </div>
 
       {/* Two columns: projects + recent projects summary */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
         {/* Projects panel */}
-        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
-          <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={CARD_STYLE}>
+          <div style={CARD_HEADER_STYLE}>
             <h2 style={{ fontSize: "0.9375rem", fontWeight: 600 }}>Projects</h2>
             <Link href="/projects" style={{ fontSize: "0.75rem", color: "var(--accent)", textDecoration: "none", display: "flex", alignItems: "center", gap: 2 }}>
               View all <ChevronRight size={14} />
@@ -238,7 +247,7 @@ export default function DashboardPage() {
                             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: "var(--text-muted)" }}>
                               {formatQuantity(req.required_quantity_ml, unit)} {unit}
                             </span>
-                            {req.flagged ? (
+                            {req.flagged > 0 ? (
                               <Link
                                 href="/projects"
                                 style={{ textDecoration: "none" }}
@@ -263,8 +272,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Projects */}
-        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
-          <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={CARD_STYLE}>
+          <div style={CARD_HEADER_STYLE}>
             <h2 style={{ fontSize: "0.9375rem", fontWeight: 600 }}>Recent Projects</h2>
             <Link href="/projects" style={{ fontSize: "0.75rem", color: "var(--accent)", textDecoration: "none", display: "flex", alignItems: "center", gap: 2 }}>
               View all <ChevronRight size={14} />
@@ -277,9 +286,9 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div style={{ maxHeight: 320, overflowY: "auto" }}>
-              {analytics.byProject.slice(0, 8).map((proj, i) => (
+              {analytics.byProject.slice(0, 8).map((proj) => (
                 <div
-                  key={i}
+                  key={proj.project_name}
                   style={{
                     padding: "0.75rem 1.25rem",
                     display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -316,18 +325,20 @@ function StatCard({
   color: string;
   clickable?: boolean;
 }) {
+  const [hovered, setHovered] = useState(false);
+
   return (
     <div
       style={{
         background: "var(--bg-card)",
-        border: "1px solid var(--border)",
+        border: `1px solid ${hovered && clickable ? "var(--accent)" : "var(--border)"}`,
         borderRadius: 8,
         padding: "1.25rem",
         cursor: clickable ? "pointer" : undefined,
         transition: clickable ? "border-color 0.15s" : undefined,
       }}
-      onMouseEnter={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent)"; } : undefined}
-      onMouseLeave={clickable ? (e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)"; } : undefined}
+      onMouseEnter={clickable ? () => setHovered(true) : undefined}
+      onMouseLeave={clickable ? () => setHovered(false) : undefined}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.75rem" }}>
         <div

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Search, Edit3, Check, X, Trash2, Plus, FileDown, Pencil } from "lucide-react";
+import { Search, Edit3, Check, X, Trash2, Plus, FileDown, Pencil, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { formatQuantity, fromMl, toMl, type DisplayUnit } from "@/lib/units";
 
 interface InventoryItem {
@@ -26,6 +26,8 @@ export default function InventoryPage() {
   const [editNameValue, setEditNameValue] = useState("");
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "low" | "out" | "sufficient">("all");
+  const [sortField, setSortField] = useState<"name" | "status" | "required" | "on_hand" | "deficit" | "projects">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
 
@@ -42,13 +44,33 @@ export default function InventoryPage() {
     fetchInventory();
   }, [fetchInventory]);
 
-  const filtered = items.filter((item) => {
-    const matchesSearch =
-      item.canonical_name.toLowerCase().includes(search.toLowerCase()) ||
-      item.product_name.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "all" || item.status === filter;
-    return matchesSearch && matchesFilter;
-  });
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) setSortDir((d) => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("asc"); }
+  };
+
+  const STATUS_ORDER = { out: 0, low: 1, sufficient: 2 };
+
+  const filtered = items
+    .filter((item) => {
+      const matchesSearch =
+        item.canonical_name.toLowerCase().includes(search.toLowerCase()) ||
+        item.product_name.toLowerCase().includes(search.toLowerCase());
+      const matchesFilter = filter === "all" || item.status === filter;
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "name":     cmp = a.canonical_name.localeCompare(b.canonical_name); break;
+        case "status":   cmp = (STATUS_ORDER[a.status as keyof typeof STATUS_ORDER] ?? 3) - (STATUS_ORDER[b.status as keyof typeof STATUS_ORDER] ?? 3); break;
+        case "required": cmp = a.total_required_ml - b.total_required_ml; break;
+        case "on_hand":  cmp = a.quantity_on_hand_ml - b.quantity_on_hand_ml; break;
+        case "deficit":  cmp = a.deficit_ml - b.deficit_ml; break;
+        case "projects": cmp = a.project_count - b.project_count; break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
 
   const startEdit = (item: InventoryItem) => {
     setEditingId(item.product_id);
@@ -250,12 +272,29 @@ export default function InventoryPage() {
         <table>
           <thead>
             <tr>
-              <th>Product</th>
-              <th>Status</th>
-              <th style={{ textAlign: "right" }}>Required ({unit})</th>
-              <th style={{ textAlign: "right" }}>On Hand ({unit})</th>
-              <th style={{ textAlign: "right" }}>Deficit ({unit})</th>
-              <th>Projects</th>
+              {([
+                { field: "name",     label: "Product",           align: "left"  },
+                { field: "status",   label: "Status",            align: "left"  },
+                { field: "required", label: `Required (${unit})`, align: "right" },
+                { field: "on_hand",  label: `On Hand (${unit})`,  align: "right" },
+                { field: "deficit",  label: `Deficit (${unit})`,  align: "right" },
+                { field: "projects", label: "Projects",           align: "left"  },
+              ] as { field: typeof sortField; label: string; align: string }[]).map(({ field, label, align }) => (
+                <th
+                  key={field}
+                  onClick={() => handleSort(field)}
+                  style={{ textAlign: align as "left" | "right", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
+                >
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    {label}
+                    {sortField === field
+                      ? sortDir === "asc"
+                        ? <ChevronUp size={13} style={{ color: "var(--accent)" }} />
+                        : <ChevronDown size={13} style={{ color: "var(--accent)" }} />
+                      : <ChevronsUpDown size={13} style={{ opacity: 0.3 }} />}
+                  </span>
+                </th>
+              ))}
               <th style={{ width: 100 }}>Actions</th>
             </tr>
           </thead>

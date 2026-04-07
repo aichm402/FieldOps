@@ -16,6 +16,8 @@ export interface ParsedProduct {
 export interface ParseResult {
   products: ParsedProduct[];
   projectName: string;
+  crop: string | null;
+  applicationTimings: string[];
   warnings: string[];
 }
 
@@ -51,6 +53,8 @@ export async function parseSprayPlanPdf(buffer: Buffer): Promise<ParseResult> {
     const warnings: string[] = [];
     const projectName = extractProjectName(text);
     const products = extractProductQuantities(text, warnings);
+    const crop = extractCrop(text);
+    const applicationTimings = extractApplicationTimings(text);
 
     if (products.length === 0) {
       warnings.push(
@@ -58,7 +62,7 @@ export async function parseSprayPlanPdf(buffer: Buffer): Promise<ParseResult> {
       );
     }
 
-    return { products, projectName, warnings };
+    return { products, projectName, crop, applicationTimings, warnings };
   } finally {
     try { fs.unlinkSync(tmpPdf); } catch {}
     try { fs.unlinkSync(tmpTxt); } catch {}
@@ -255,6 +259,93 @@ function extractProductName(rest: string): string {
 
   const nameTokens = tokens.slice(0, cutIndex);
   return nameTokens.join(" ").trim();
+}
+
+// EPPO crop codes → common name. Covers most row crops in ARM trials.
+const EPPO_TO_CROP: Record<string, string> = {
+  GLXMA: "Soybean",
+  ZEAMM: "Corn",
+  ZEAME: "Corn",       // includes popcorn / sweet corn variants
+  TRZAW: "Winter Wheat",
+  TRZAS: "Spring Wheat",
+  TRZAX: "Wheat",
+  GOSHI: "Cotton",
+  BRSNN: "Canola",
+  BRSNO: "Canola",
+  SORIC: "Sorghum",
+  ORYSA: "Rice",
+  HELAN: "Sunflower",
+  PIBSA: "Field Pea",
+  PHSVX: "Dry Bean",
+  SOLTU: "Potato",
+  BRSOL: "Cabbage",
+  LACSA: "Lettuce",
+  LYCES: "Tomato",
+};
+
+// Known application timing codes used in ARM trial maps.
+const KNOWN_TIMINGS = new Set([
+  "PRE", "POST", "PREEM", "PREEMERGENCE", "POSTEMERGENCE",
+  "EPOST", "MPOST", "LPOST", "BPOST", "POSTWE",
+  "PREPLANT", "PREPL", "FOLIAR", "BURNDOWN", "BURN",
+  "AT-PLANT", "ATPLANT", "LAYBY", "SIDEDRESS",
+  "VA", "NA",
+]);
+
+function extractCrop(text: string): string | null {
+  // ARM PDFs have a "Crop Description" section with lines like:
+  //   Crop 1: C GLXMA Glycine max Soybean
+  //   Crop 1: C ZEAME Zea mays subsp. everta popcorn
+  // The EPPO code is always 5 uppercase letters after "C " (or directly after "Crop 1: ")
+  const cropLineMatch = text.match(
+    /Crop\s+1:\s+(?:[A-Z]\s+)?([A-Z]{5})\s+([\w\s.]+)/m
+  );
+  if (!cropLineMatch) return null;
+
+  const eppoCode = cropLineMatch[1];
+  const rest = cropLineMatch[2].trim();
+
+  // EPPO lookup first
+  if (EPPO_TO_CROP[eppoCode]) {
+    const base = EPPO_TO_CROP[eppoCode];
+    // Refine: if the last word of rest is a more specific common name not in the EPPO map,
+    // use it (e.g., "popcorn" instead of generic "Corn")
+    const tokens = rest.split(/\s+/).filter(Boolean);
+    const lastWord = tokens[tokens.length - 1]?.toLowerCase();
+    const specificNames = ["popcorn", "sweetcorn", "sorghum"];
+    if (lastWord && specificNames.includes(lastWord)) {
+      return lastWord.charAt(0).toUpperCase() + lastWord.slice(1);
+    }
+    return base;
+  }
+
+  // Fallback: take the last token from the rest string (common name convention)
+  const tokens = rest.split(/\s+/).filter(Boolean);
+  if (tokens.length > 0) {
+    const last = tokens[tokens.length - 1];
+    return last.charAt(0).toUpperCase() + last.slice(1).toLowerCase();
+  }
+
+  return null;
+}
+
+function extractApplicationTimings(text: string): string[] {
+  // Timing codes appear in treatment table rows immediately after the single-letter
+  // application code (A, B, C ...). Example row fragments:
+  //   ... 5 oz/a  A  PREEM  4.993 g/mx ...
+  //   ... 10 fl oz/a  B  EPOST  ...
+  //   ... 22 fl oz/a  A  POSTWE  ...
+  // Pattern: word boundary, single uppercase letter, whitespace(s), uppercase word (2–12 chars)
+  const found = new Set<string>();
+  const re = /\b[A-Z]\s{1,6}([A-Z]{2,12})\b/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const candidate = m[1];
+    if (KNOWN_TIMINGS.has(candidate)) {
+      found.add(candidate);
+    }
+  }
+  return Array.from(found).sort();
 }
 
 function deduplicateProducts(
