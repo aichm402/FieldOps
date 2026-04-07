@@ -21,6 +21,8 @@ export interface Project {
   upload_date: string;
   status: string;
   notes: string | null;
+  crop: string | null;
+  application_timings: string | null;
 }
 
 export interface InventoryRequirement {
@@ -40,6 +42,20 @@ export interface InventoryStock {
   product_id: string;
   quantity_on_hand_ml: number;
   last_updated: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  date: string;
+  title: string;
+  notes: string | null;
+  color: string;
+  created_at: string;
+}
+
+export interface CalendarEventProject {
+  event_id: string;
+  project_id: string;
 }
 
 // Aggregated views
