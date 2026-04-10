@@ -40,6 +40,10 @@ yarn-error.log*
 /data/
 /uploads/
 
+# SQLite database
+prisma/*.db
+prisma/*.db-journal
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
