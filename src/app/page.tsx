@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   CalendarDays,
+  LayoutDashboard,
 } from "lucide-react";
 import { formatQuantity } from "@/lib/units";
 
@@ -137,7 +138,8 @@ export default function DashboardPage() {
     <div style={{ maxWidth: 1200 }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
-        <div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <LayoutDashboard size={22} color="var(--accent)" />
           <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em" }}>Dashboard</h1>
         </div>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
